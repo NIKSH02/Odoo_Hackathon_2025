@@ -22,7 +22,7 @@ const getAllItems = asyncHandler(async (req, res) => {
     .sort({ createdAt: -1 });
 
   res.status(200).json(
-    new ApiResponse(200, items, "Items retrieved successfully")
+    new ApiResponse(200, "Items retrieved successfully", items)
   );
 });
 
@@ -38,7 +38,7 @@ const getItemById = asyncHandler(async (req, res) => {
   }
 
   res.status(200).json(
-    new ApiResponse(200, item, "Item retrieved successfully")
+    new ApiResponse(200, "Item retrieved successfully", item)
   );
 });
 
@@ -94,7 +94,7 @@ const createItem = asyncHandler(async (req, res) => {
   );
 
   res.status(201).json(
-    new ApiResponse(201, item, "Item created successfully")
+    new ApiResponse(201, "Item created successfully", item)
   );
 });
 
