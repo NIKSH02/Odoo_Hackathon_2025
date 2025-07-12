@@ -48,8 +48,8 @@ const registerUser = asynchandler(async (req, res) => {
     username: username.toLowerCase(),
     email,
     password,
-    emailOtp,
-    emailOtpExpiry,
+    otp: emailOtp,
+    otpExpiry: emailOtpExpiry,
     isEmailVerified: false, // Require email verification
   });
 
@@ -61,7 +61,7 @@ const registerUser = asynchandler(async (req, res) => {
   }
 
   const createdUser = await User.findById(user._id).select(
-    "-password -refresh_token -emailOtp -loginOtp"
+    "-password -refresh_token -otp -loginOtp"
   );
 
   return res
@@ -109,7 +109,7 @@ const verifyEmailOTP = asynchandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(new ApiResponse(200, null, "Email verified successfully"));
+    .json(new ApiResponse(200, "Email verified successfully"));
 });
 
 // Resend Email Verification OTP
@@ -133,8 +133,8 @@ const resendEmailOTP = asynchandler(async (req, res) => {
   const emailOtp = generateOTP();
   const emailOtpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
-  user.emailOtp = emailOtp;
-  user.emailOtpExpiry = emailOtpExpiry;
+  user.otp = emailOtp;
+  user.otpExpiry = emailOtpExpiry;
   await user.save({ validateBeforeSave: false });
 
   const emailSent = await sendOTPEmail(email, emailOtp, "verification");
@@ -175,7 +175,7 @@ const loginUser = asynchandler(async (req, res) => {
     await generateAccessTokenAndRefreshToken(user._id);
 
   const loggedInUser = await User.findById(user._id).select(
-    "-password -refresh_token -emailOtp -loginOtp"
+    "-password -refresh_token -otp -loginOtp"
   );
 
   const options = {
@@ -229,7 +229,7 @@ const sendLoginOTP = asynchandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(new ApiResponse(200, null, "Login OTP sent successfully"));
+    .json(new ApiResponse(200,  "Login OTP sent successfully"));
 });
 
 // Login with OTP
@@ -267,7 +267,7 @@ const loginWithOTP = asynchandler(async (req, res) => {
     await generateAccessTokenAndRefreshToken(user._id);
 
   const loggedInUser = await User.findById(user._id).select(
-    "-password -refresh_token -emailOtp -loginOtp"
+    "-password -refresh_token -otp -loginOtp"
   );
 
   const options = {
@@ -309,7 +309,7 @@ const logoutUser = asynchandler(async (req, res) => {
     .status(200)
     .clearCookie("refreshToken", options)
     .clearCookie("accessToken", options)
-    .json(new ApiResponse(200, null, "User logged out successfully"));
+    .json(new ApiResponse(200,  "User logged out successfully"));
 });
 
 // Get Current User
