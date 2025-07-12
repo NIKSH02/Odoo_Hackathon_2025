@@ -14,7 +14,7 @@ const verifyJWT = require("../middlewares/auth.middleware");
 
 // Authentication Routes
 router.post("/register", registerUser); // Register a new user
-router.post("/verify-email", verifyEmailOTP); // Verify email with OTP
+router.post("/verify-email", verifyEmailOTP);// Verify email with OTP
 router.post("/resend-email-otp", resendEmailOTP); // Resend email verification OTP
 
 // Login Routes
@@ -28,3 +28,4 @@ router.post("/refresh-token", refreshToken); // Refresh access token
 router.get("/profile", verifyJWT, getCurrentUser); // Get current user profile
 
 module.exports = router;
+ 
