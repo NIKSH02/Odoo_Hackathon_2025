@@ -2,7 +2,10 @@ const asynchandler = require("../utils/asynchandler");
 const User = require("../models/User.model");
 const apiError = require("../utils/apiError");
 const ApiResponse = require("../utils/apiResponse");
-const { generateOTP, sendOTPEmail } = require("../utils/emailService");
+const {
+  generateOTP,
+  sendOTPEmail,
+} = require("../utils/emailService.alternative");
 
 // Helper function to generate tokens
 const generateAccessTokenAndRefreshToken = async (userId) => {
@@ -47,7 +50,7 @@ const registerUser = asynchandler(async (req, res) => {
     password,
     emailOtp,
     emailOtpExpiry,
-    isEmailVerified: false,
+    isEmailVerified: false, // Require email verification
   });
 
   // Send OTP email
@@ -90,18 +93,18 @@ const verifyEmailOTP = asynchandler(async (req, res) => {
     throw new apiError(400, "Email is already verified");
   }
 
-  if (!user.emailOtp || user.emailOtp !== otp) {
+  if (!user.otp || user.otp !== otp) {
     throw new apiError(400, "Invalid OTP");
   }
 
-  if (new Date() > user.emailOtpExpiry) {
+  if (new Date() > user.otpExpiry) {
     throw new apiError(400, "OTP has expired");
   }
 
   // Verify email
   user.isEmailVerified = true;
-  user.emailOtp = undefined;
-  user.emailOtpExpiry = undefined;
+  user.otp = undefined;
+  user.otpExpiry = undefined;
   await user.save({ validateBeforeSave: false });
 
   return res
@@ -142,7 +145,7 @@ const resendEmailOTP = asynchandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(new ApiResponse(200, null, "Verification OTP sent successfully"));
+    .json(new ApiResponse(200, "Verification OTP sent successfully"));
 });
 
 // Login User with Password
