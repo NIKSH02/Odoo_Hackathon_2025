@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   User, 
   Star, 
@@ -142,8 +143,33 @@ const ReWearUserDashboard = () => {
     navigate('/list')
   }
 
-  const StatCard = ({ icon: Icon, title, value, subtitle, color = "gray" }) => (
-    <div className="bg-gray-800 rounded-lg shadow-lg p-6 border-l-4 border-l-gray-400">
+  const pageTransition = {
+    initial: { opacity: 0, y: 20 },
+    animate: { opacity: 1, y: 0 },
+    exit: { opacity: 0, y: -20 },
+    transition: { duration: 0.3 }
+  };
+
+  const listItemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: (index) => ({
+      opacity: 1,
+      y: 0,
+      transition: {
+        delay: index * 0.1,
+        duration: 0.3
+      }
+    })
+  };
+
+  const StatCard = ({ icon: Icon, title, value, subtitle, color = "gray", index }) => (
+    <motion.div 
+      className="bg-gray-800 rounded-lg shadow-lg p-6 border-l-4 border-l-gray-400"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.1, duration: 0.3 }}
+      whileHover={{ scale: 1.02 }}
+    >
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm font-medium text-gray-400">{title}</p>
@@ -154,11 +180,18 @@ const ReWearUserDashboard = () => {
           <Icon className="w-6 h-6 text-gray-300" />
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 
-  const ItemCard = ({ item }) => (
-    <div className="bg-gray-800 rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow border border-gray-700">
+  const ItemCard = ({ item, index }) => (
+    <motion.div 
+      className="bg-gray-800 rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow border border-gray-700"
+      variants={listItemVariants}
+      initial="hidden"
+      animate="visible"
+      custom={index}
+      whileHover={{ scale: 1.02 }}
+    >
       <div className="aspect-square bg-gray-700 flex items-center justify-center">
         <Shirt className="w-12 h-12 text-gray-500" />
       </div>
@@ -191,11 +224,14 @@ const ReWearUserDashboard = () => {
           </button>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 
   const renderOverview = () => (
-    <div className="space-y-6">
+    <motion.div 
+      className="space-y-6"
+      {...pageTransition}
+    >
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard 
@@ -204,6 +240,7 @@ const ReWearUserDashboard = () => {
           value={user.points} 
           subtitle="Available to spend"
           color="blue"
+          index={0}
         />
         <StatCard 
           icon={ArrowUpDown} 
@@ -211,6 +248,7 @@ const ReWearUserDashboard = () => {
           value={user.totalSwaps} 
           subtitle="Successful exchanges"
           color="green"
+          index={1}
         />
         <StatCard 
           icon={Package} 
@@ -218,6 +256,7 @@ const ReWearUserDashboard = () => {
           value={myListings.filter(item => item.status === 'active').length} 
           subtitle="Currently available"
           color="purple"
+          index={2}
         />
         <StatCard 
           icon={Award} 
@@ -225,6 +264,7 @@ const ReWearUserDashboard = () => {
           value={user.rating} 
           subtitle="Community rating"
           color="yellow"
+          index={3}
         />
       </div>
 
@@ -270,11 +310,14 @@ const ReWearUserDashboard = () => {
           ))}
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 
   const renderMyListings = () => (
-    <div className="space-y-6">
+    <motion.div 
+      className="space-y-6"
+      {...pageTransition}
+    >
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold text-white">My Listings</h2>
         <div className="flex space-x-3">
@@ -290,20 +333,23 @@ const ReWearUserDashboard = () => {
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {myListings.map(item => (
-          <ItemCard key={item.id} item={item} />
+        {myListings.map((item, index) => (
+          <ItemCard key={item.id} item={item} index={index} />
         ))}
       </div>
-    </div>
+    </motion.div>
   );
 
   const renderSwapHistory = () => (
-    <div className="space-y-6">
+    <motion.div 
+      className="space-y-6"
+      {...pageTransition}
+    >
       <h2 className="text-2xl font-bold text-gray-900">Swap History</h2>
       
       <div className="bg-gray-700 text-gray-300 rounded-lg shadow-md p-4 overflow-hidden">
-        <div className="overflow-x-auto rounded-lg " >
-          <table className="w-full ">
+        <div className="overflow-x-auto rounded-lg">
+          <table className="w-full">
             <thead className="bg-gray-700 text-gray-300">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
@@ -327,8 +373,15 @@ const ReWearUserDashboard = () => {
               </tr>
             </thead>
             <tbody className="bg-gray-600 rounded-lg">
-              {swapHistory.map(swap => (
-                <tr key={swap.id} className="space-x-4">
+              {swapHistory.map((swap, index) => (
+                <motion.tr 
+                  key={swap.id} 
+                  className="space-x-4"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                  whileHover={{ backgroundColor: 'rgba(75, 85, 99, 0.3)' }}
+                >
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center space-x-4 rounded-lg">
                       {swap.type === 'swap' ? (
@@ -365,17 +418,20 @@ const ReWearUserDashboard = () => {
                       {swap.points !== 0 ? `${swap.points > 0 ? '+' : ''}${swap.points}` : '-'}
                     </div>
                   </td>
-                </tr>
+                </motion.tr>
               ))}
             </tbody>
           </table>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 
   const renderProfile = () => (
-    <div className="space-y-6">
+    <motion.div 
+      className="space-y-6"
+      {...pageTransition}
+    >
       <h2 className="text-2xl font-bold text-white">Profile Settings</h2>
       
       <div className="bg-gray-800 border border-gray-700 rounded-lg shadow-md p-6">
@@ -481,7 +537,7 @@ const ReWearUserDashboard = () => {
           </button>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 
   return (
@@ -575,10 +631,12 @@ const ReWearUserDashboard = () => {
 
           {/* Main Content */}
           <div className="flex-1">
-            {activeTab === 'overview' && renderOverview()}
-            {activeTab === 'listings' && renderMyListings()}
-            {activeTab === 'swaps' && renderSwapHistory()}
-            {activeTab === 'profile' && renderProfile()}
+            <AnimatePresence mode="wait">
+              {activeTab === 'overview' && renderOverview()}
+              {activeTab === 'listings' && renderMyListings()}
+              {activeTab === 'swaps' && renderSwapHistory()}
+              {activeTab === 'profile' && renderProfile()}
+            </AnimatePresence>
           </div>
         </div>
       </div>

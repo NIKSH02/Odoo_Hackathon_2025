@@ -37,6 +37,12 @@ export default function Navbar({ onLogout }) {
     closeMobileMenu();
   };
 
+    const handleDash = () => {
+    // Navigate to login/signup page using React Router
+    navigate('/dashboard');
+    closeMobileMenu();
+  };
+
   const handleHowItWorks = () => {
     // Smooth scroll to How It Works section
     const howItWorksSection = document.querySelector('#how-it-works');
@@ -79,10 +85,17 @@ export default function Navbar({ onLogout }) {
         </button>
         <button onClick={handleAbout} className="hover:text-black transition-colors duration-200">About</button>
         <button onClick={handleMessages} className="hover:text-black transition-colors duration-200">Messages</button>
+         <button 
+              onClick={handleDash}
+              className="hover:text-black transition-colors duration-200"
+            >
+              Dashboard
+            </button>
       </nav>
 
       {/* Desktop Auth Buttons */}
       <div className="hidden md:flex space-x-4">
+        
         <button 
           onClick={handleLogin}
           className="text-sm font-medium text-gray-700 hover:text-black transition-colors duration-200"
