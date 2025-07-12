@@ -369,7 +369,6 @@ export default function SignInCard() {
   return (
     <Card variant="outlined">
       <Box sx={{ display: { xs: 'flex', md: 'none' } }}>
-        <SitemarkIcon />
       </Box>
       <Typography
         component="h1"
@@ -590,24 +589,7 @@ export default function SignInCard() {
                 inputProps={{ maxLength: 6, pattern: '[0-9]*' }}
                 sx={{ mb: { xs: 1, sm: 0 } }}
               />
-              <Button
-                variant="contained"
-                onClick={handleVerifyOtp}
-                disabled={loading}
-                sx={{ 
-                  minWidth: { xs: '100%', sm: '70px' }, 
-                  height: '40px', 
-                  fontSize: { xs: '0.875rem', sm: '0.65rem' },
-                  backgroundColor: '#000',
-                  color: '#fff',
-                  minHeight: '44px',
-                  '&:hover': {
-                    backgroundColor: '#333'
-                  }
-                }}
-              >
-                {loading ? <CircularProgress size={20} color="inherit" /> : 'Verify'}
-              </Button>
+              
             </Box>
             <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
               Development mode: Check the backend console/terminal for your OTP
@@ -640,63 +622,6 @@ export default function SignInCard() {
               disabled={otpVerified}
               sx={{ mb: { xs: 1, sm: 0 } }}
             />
-            {email.trim() && (
-              otpVerified ? (
-                <Button
-                  variant="contained"
-                  color="success"
-                  sx={{ 
-                    minWidth: { xs: '100%', sm: '80px' }, 
-                    height: '40px', 
-                    fontSize: '0.75rem',
-                    minHeight: '44px'
-                  }}
-                  disabled
-                >
-                  ✓ Verified
-                </Button>
-              ) : (
-                <Button
-                  variant="outlined"
-                  onClick={otpSent ? handleResendOtp : () => {
-                    // For signup, we need to register first to get OTP
-                    if (!email.trim()) {
-                      setEmailError(true);
-                      setEmailErrorMessage('Please enter a valid email address.');
-                      return;
-                    }
-                    
-                    // For first time, register the user which will send OTP
-                    handleInitialSignupWithOTP();
-                  }}
-                  disabled={isResendDisabled || loading}
-                  sx={{ 
-                    minWidth: { xs: '100%', sm: '80px' }, 
-                    height: '40px', 
-                    fontSize: { xs: '0.75rem', sm: '0.55rem' },
-                    backgroundColor: '#000',
-                    color: '#fff',
-                    border: '1px solid #000',
-                    minHeight: '44px',
-                    '&:hover': {
-                      backgroundColor: '#333',
-                      border: '1px solid #333'
-                    },
-                    '&:disabled': {
-                      backgroundColor: '#666',
-                      color: '#fff',
-                      border: '1px solid #666'
-                    }
-                  }}
-                >
-                  {otpSent ? (
-                    isResendDisabled ? `Resend (${countdown}s)` : 'Resend OTP'
-                  ) : (
-                    'Verify'
-                  )}
-                </Button>
-              )
-            )}
           </Box>
         </FormControl> }
 

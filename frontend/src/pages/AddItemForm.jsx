@@ -135,8 +135,8 @@ export default function AddItemForm() {
                 <div
                   className={`border-2 border-dashed rounded-xl p-8 text-center transition-all ${
                     dragOver 
-                      ? 'border-emerald-400 bg-emerald-50' 
-                      : 'border-gray-300 hover:border-emerald-300'
+                      ? 'border-black-500 bg-gray-100' 
+                      : 'border-gray-300 hover:border-black-500 hover:bg-gray-50'
                   } ${images.length >= 6 ? 'opacity-50 pointer-events-none' : ''}`}
                   onDrop={handleDrop}
                   onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}

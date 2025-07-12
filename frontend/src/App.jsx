@@ -7,6 +7,8 @@ import Authentication from './pages/Authentication';
 import Home from './pages/Home';
 import Browse from './pages/Browse';
 import About from './pages/About';
+import AddItemForm from './pages/AddItemForm';
+import ReWearUserDashboard from './pages/RewearUserDashboard';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -14,7 +16,7 @@ function App() {
 
   useEffect(() => {
     // Check if user is authenticated (check for token in localStorage)
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('accesstoken');
     if (token) {
       setIsAuthenticated(true);
     }
@@ -33,15 +35,15 @@ function App() {
 
   if (loading) {
     return (
-      <AppTheme>
+      <>
         <CssBaseline />
         <div>Loading...</div>
-      </AppTheme>
+      </>
     );
   }
 
   return (
-    <AppTheme>
+    <>
       <CssBaseline />
       <Router>
         <Routes>
@@ -69,9 +71,21 @@ function App() {
             path='/' 
             element={<Navigate to='/home' replace />}
           />
+          <Route 
+            path='/addItem'
+            element={<AddItemForm />}
+         />
+          
+          <Route 
+          path='/dashboard'
+          element={
+            isAuthenticated &&
+            <ReWearUserDashboard /> 
+          } />
+
         </Routes>
       </Router>
-    </AppTheme>
+    </>
   );
 }
 
