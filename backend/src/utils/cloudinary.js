@@ -1,5 +1,4 @@
 const v2 = require('cloudinary').v2;
-const fs = require('fs');
 
 const cloudnairyconnect = () => {
     try {
@@ -14,23 +13,31 @@ const cloudnairyconnect = () => {
     }
   };
 
-const uploadOnCloudinary = async (localFilePath) => {
+// Direct upload from buffer
+const uploadOnCloudinary = async (fileBuffer, fileName) => {
     try{
-
         await cloudnairyconnect();
-        if(!localFilePath){
-            throw new Error('File path is required');
+        if(!fileBuffer){
+            throw new Error('File buffer is required');
         }
-        const response = await v2.uploader.upload(localFilePath,{
-            resource_type:'auto'
-        })
-        console.log('file is uploaded on cloudinary',response.url);
-        return response;
+        
+        return new Promise((resolve, reject) => {
+            v2.uploader.upload_stream({
+                resource_type: 'auto',
+                public_id: fileName ? fileName.split('.')[0] : undefined // Remove extension for public_id
+            }, (error, result) => {
+                if (error) {
+                    console.error('Cloudinary upload error:', error);
+                    return reject(error);
+                }
+                console.log('File uploaded to Cloudinary:', result.secure_url);
+                resolve(result);
+            }).end(fileBuffer);
+        });
     } catch (error){
         console.error('Error uploading file on cloudinary:',error);
-        fs.unlinkSync(localFilePath )
         return null;
     }
 }
 
-module.exports =uploadOnCloudinary;
+module.exports = { uploadOnCloudinary };
