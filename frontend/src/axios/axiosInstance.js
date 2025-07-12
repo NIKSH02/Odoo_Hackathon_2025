@@ -1,13 +1,10 @@
 import axios from 'axios';
-import { getCurrentConfig } from './apiConfig';
-
-// Get current configuration
-const config = getCurrentConfig();
+import { API_CONFIG } from './apiConfig';
 
 // Create axios instance with base configuration
 const axiosInstance = axios.create({
-  baseURL: config.BASE_URL,
-  timeout: 10000, // 10 seconds timeout
+  baseURL: API_CONFIG.BASE_URL,
+  timeout: API_CONFIG.TIMEOUT,
   headers: {
     'Content-Type': 'application/json',
   },

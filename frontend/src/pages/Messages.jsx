@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Navbar from './components/Navbar';
 
-export default function Messages({ onLogout }) {
+export default function Messages() {
   const [selectedChat, setSelectedChat] = useState(null);
   const [messageInput, setMessageInput] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -168,7 +168,7 @@ export default function Messages({ onLogout }) {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar onLogout={onLogout} />
+      <Navbar />
       
       <div className="max-w-7xl mx-auto px-4 py-6">
         <motion.div

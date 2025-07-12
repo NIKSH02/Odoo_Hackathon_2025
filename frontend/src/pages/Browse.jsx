@@ -1,9 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Navbar from './components/Navbar';
 import Modal from './Modal';
+import ItemService from '../services/itemService';
+import SwapService from '../services/swapService';
+import PointsService from '../services/pointsService';
+import { useAuth } from '../hooks/useAuthContext';
 
-export default function Browse({ onLogout }) {
+export default function Browse() {
+  const { user, isAuthenticated } = useAuth();
   const [favorites, setFavorites] = useState(new Set());
   const [filterCategory, setFilterCategory] = useState('All');
   const [filterCondition, setFilterCondition] = useState('All');
@@ -12,9 +17,65 @@ export default function Browse({ onLogout }) {
   const [selectedProductForSwap, setSelectedProductForSwap] = useState(null);
   const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
   const [selectedProductForPurchase, setSelectedProductForPurchase] = useState(null);
+  const [products, setProducts] = useState([]);
+  const [userListings, setUserListings] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Load products from backend
+  useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        setLoading(true);
+        const filters = {};
+        if (filterCategory !== 'All') filters.category = filterCategory;
+        if (filterCondition !== 'All') filters.condition = filterCondition;
+        
+        const response = await ItemService.getAllItems(filters);
+        console.log('Items response:', response); // Debug log
+        
+        if (response && response.data) {
+          setProducts(Array.isArray(response.data) ? response.data : []);
+        } else {
+          setProducts([]);
+        }
+      } catch (error) {
+        console.error('Error loading products:', error);
+        setError('Failed to load products');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadProducts();
+  }, [filterCategory, filterCondition]);
+
+  // Load user's listings for swap functionality
+  useEffect(() => {
+    const loadUserListings = async () => {
+      if (!isAuthenticated) return;
+      
+      try {
+        const response = await ItemService.getAllItems({ userItems: true });
+        if (response && response.data) {
+          setUserListings(Array.isArray(response.data) ? response.data : []);
+        } else {
+          setUserListings([]);
+        }
+      } catch (error) {
+        console.error('Error loading user listings:', error);
+      }
+    };
+
+    loadUserListings();
+  }, [isAuthenticated]);
 
   // Handler functions for modals
-  const handleRequestSwap = (product) => {
+  const handleRequestSwap = async (product) => {
+    if (!isAuthenticated) {
+      alert('Please login to request a swap');
+      return;
+    }
     setSelectedProductForSwap(product);
     setIsSwapModalOpen(true);
   };
@@ -24,7 +85,11 @@ export default function Browse({ onLogout }) {
     setSelectedProductForSwap(null);
   };
 
-  const handleBuyWithPoints = (product) => {
+  const handleBuyWithPoints = async (product) => {
+    if (!isAuthenticated) {
+      alert('Please login to buy with points');
+      return;
+    }
     setSelectedProductForPurchase(product);
     setIsPurchaseModalOpen(true);
   };
@@ -33,210 +98,6 @@ export default function Browse({ onLogout }) {
     setIsPurchaseModalOpen(false);
     setSelectedProductForPurchase(null);
   };
-
-  // Sample user's listings (what they can offer for swap)
-  const userListings = [
-    {
-      _id: "user_item_1",
-      title: "Blue Denim Jacket",
-      description: "Vintage blue denim jacket from Gap, excellent condition.",
-      images: ["https://images.unsplash.com/photo-1576995853123-5a10305d93c0?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80"],
-      category: "Women",
-      subCategory: "casual",
-      size: "M",
-      condition: "like-new",
-      pointsCost: 140,
-      status: "available"
-    },
-    {
-      _id: "user_item_2",
-      title: "Black Casual Dress",
-      description: "Comfortable black dress, perfect for everyday wear.",
-      images: ["https://images.unsplash.com/photo-1595777457583-95e059d581b8?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80"],
-      category: "Women",
-      subCategory: "casual",
-      size: "S",
-      condition: "good",
-      pointsCost: 100,
-      status: "available"
-    },
-    {
-      _id: "user_item_3",
-      title: "White Sneakers",
-      description: "Clean white sneakers from Nike, barely used.",
-      images: ["https://images.unsplash.com/photo-1600269452121-4f2416e55c28?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80"],
-      category: "Women",
-      subCategory: "sports",
-      size: "8",
-      condition: "like-new",
-      pointsCost: 120,
-      status: "available"
-    }
-  ];
-
-  // Extended product data - all items displayed here
-  const products = [
-    {
-      _id: "507f1f77bcf86cd799439011",
-      title: "Vintage Denim Jacket",
-      description: "Classic blue denim jacket from Levi's, barely worn. Perfect for layering in any season.",
-      images: ["https://images.unsplash.com/photo-1544966503-7cc5ac882d5a?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80"],
-      category: "Women",
-      subCategory: "casual",
-      size: "M",
-      condition: "like-new",
-      pointsCost: 150,
-      status: "available",
-      approved: true,
-      listedBy: {
-        _id: "507f1f77bcf86cd799439012",
-        username: "sarah_m",
-        email: "sarah@example.com"
-      },
-      createdAt: "2024-01-15T10:30:00Z",
-      updatedAt: "2024-01-15T10:30:00Z"
-    },
-    {
-      _id: "507f1f77bcf86cd799439013",
-      title: "Summer Floral Dress",
-      description: "Beautiful floral print sundress from Zara, perfect for summer occasions and casual outings.",
-      images: ["https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80"],
-      category: "Women",
-      subCategory: "party",
-      size: "S",
-      condition: "good",
-      pointsCost: 120,
-      status: "available",
-      approved: true,
-      listedBy: {
-        _id: "507f1f77bcf86cd799439014",
-        username: "emma_l",
-        email: "emma@example.com"
-      },
-      createdAt: "2024-01-10T14:20:00Z",
-      updatedAt: "2024-01-10T14:20:00Z"
-    },
-    {
-      _id: "507f1f77bcf86cd799439015",
-      title: "Black Leather Boots",
-      description: "Authentic Dr. Martens leather boots, comfortable and stylish for everyday wear.",
-      images: ["https://images.unsplash.com/photo-1608256246200-53e8b47b82d6?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80"],
-      category: "Women",
-      subCategory: "casual",
-      size: "8",
-      condition: "good",
-      pointsCost: 180,
-      status: "available",
-      approved: true,
-      listedBy: {
-        _id: "507f1f77bcf86cd799439016",
-        username: "alex_r",
-        email: "alex@example.com"
-      },
-      createdAt: "2024-01-12T09:15:00Z",
-      updatedAt: "2024-01-12T09:15:00Z"
-    },
-    {
-      _id: "507f1f77bcf86cd799439017",
-      title: "Casual White Sneakers",
-      description: "Clean white Adidas sneakers, great for everyday wear and sports activities.",
-      images: ["https://images.unsplash.com/photo-1549298916-b41d501d3772?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80"],
-      category: "Men",
-      subCategory: "sports",
-      size: "10",
-      condition: "good",
-      pointsCost: 100,
-      status: "available",
-      approved: true,
-      listedBy: {
-        _id: "507f1f77bcf86cd799439018",
-        username: "mike_t",
-        email: "mike@example.com"
-      },
-      createdAt: "2024-01-08T16:45:00Z",
-      updatedAt: "2024-01-08T16:45:00Z"
-    },
-    {
-      _id: "507f1f77bcf86cd799439019",
-      title: "Designer Evening Dress",
-      description: "Elegant black evening dress, perfect for formal events and special occasions.",
-      images: ["https://images.unsplash.com/photo-1566479179817-c04b62b2d46f?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80"],
-      category: "Women",
-      subCategory: "formal",
-      size: "M",
-      condition: "new",
-      pointsCost: 250,
-      status: "available",
-      approved: true,
-      listedBy: {
-        _id: "507f1f77bcf86cd799439020",
-        username: "jessica_k",
-        email: "jessica@example.com"
-      },
-      createdAt: "2024-01-14T11:30:00Z",
-      updatedAt: "2024-01-16T14:20:00Z"
-    },
-    {
-      _id: "507f1f77bcf86cd799439021",
-      title: "Navy Blue Blazer",
-      description: "Professional Hugo Boss blazer, perfect for office wear and formal business meetings.",
-      images: ["https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80"],
-      category: "Men",
-      subCategory: "formal",
-      size: "L",
-      condition: "like-new",
-      pointsCost: 200,
-      status: "available",
-      approved: true,
-      listedBy: {
-        _id: "507f1f77bcf86cd799439022",
-        username: "david_p",
-        email: "david@example.com"
-      },
-      createdAt: "2024-01-11T13:10:00Z",
-      updatedAt: "2024-01-11T13:10:00Z"
-    },
-    {
-      _id: "507f1f77bcf86cd799439023",
-      title: "Cozy Winter Sweater",
-      description: "Warm wool sweater perfect for cold weather, in excellent condition.",
-      images: ["https://images.unsplash.com/photo-1434389677669-e08b4cac3105?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80"],
-      category: "Women",
-      subCategory: "casual",
-      size: "L",
-      condition: "good",
-      pointsCost: 90,
-      status: "available",
-      approved: true,
-      listedBy: {
-        _id: "507f1f77bcf86cd799439024",
-        username: "mia_c",
-        email: "mia@example.com"
-      },
-      createdAt: "2024-01-09T12:30:00Z",
-      updatedAt: "2024-01-09T12:30:00Z"
-    },
-    {
-      _id: "507f1f77bcf86cd799439025",
-      title: "Trendy Sunglasses",
-      description: "Stylish Ray-Ban sunglasses, perfect for sunny days and outdoor activities.",
-      images: ["https://images.unsplash.com/photo-1572635196237-14b3f281503f?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80"],
-      category: "Unisex",
-      subCategory: "accessories",
-      size: "One Size",
-      condition: "like-new",
-      pointsCost: 80,
-      status: "available",
-      approved: true,
-      listedBy: {
-        _id: "507f1f77bcf86cd799439026",
-        username: "tom_h",
-        email: "tom@example.com"
-      },
-      createdAt: "2024-01-13T15:45:00Z",
-      updatedAt: "2024-01-13T15:45:00Z"
-    }
-  ];
 
   const toggleFavorite = (productId) => {
     const newFavorites = new Set(favorites);
@@ -287,10 +148,10 @@ export default function Browse({ onLogout }) {
   };
 
   // Filter and sort products
-  const filteredProducts = products
-    .filter(product => product.approved && product.status === 'available')
-    .filter(product => filterCategory === 'All' || product.category === filterCategory)
-    .filter(product => filterCondition === 'All' || product.condition === filterCondition)
+  const filteredProducts = (products || [])
+    .filter(product => product?.approved && product?.status === 'available')
+    .filter(product => filterCategory === 'All' || product?.category === filterCategory)
+    .filter(product => filterCondition === 'All' || product?.condition === filterCondition)
     .sort((a, b) => {
       switch (sortBy) {
         case 'newest':
@@ -349,7 +210,7 @@ export default function Browse({ onLogout }) {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar onLogout={onLogout} />
+      <Navbar />
       
       {/* Hero Section */}
       <motion.section 
