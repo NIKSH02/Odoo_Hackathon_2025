@@ -1,6 +1,7 @@
 const router = require("express").Router();
 const {
   registerUser,
+  registerAdmin,
   verifyEmailOTP,
   resendEmailOTP,
   loginUser,
@@ -9,11 +10,14 @@ const {
   logoutUser,
   getCurrentUser,
   refreshToken,
+  updateProfile,
+  getProfileStatus,
 } = require("../controllers/user.controller");
 const verifyJWT = require("../middlewares/auth.middleware");
 
 // Authentication Routes
 router.post("/register", registerUser); // Register a new user
+router.post("/register-admin", registerAdmin); // Register admin user (requires secret)
 router.post("/verify-email", verifyEmailOTP);// Verify email with OTP
 router.post("/resend-email-otp", resendEmailOTP); // Resend email verification OTP
 
@@ -26,6 +30,8 @@ router.post("/login-with-otp", loginWithOTP); // Login with OTP
 router.post("/logout", verifyJWT, logoutUser); // Logout user
 router.post("/refresh-token", refreshToken); // Refresh access token
 router.get("/profile", verifyJWT, getCurrentUser); // Get current user profile
+router.put("/profile", verifyJWT, updateProfile); // Update user profile
+router.get("/profile/status", verifyJWT, getProfileStatus); // Get profile completion status
 
 module.exports = router;
  

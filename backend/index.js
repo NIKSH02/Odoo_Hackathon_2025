@@ -34,14 +34,11 @@ app.use(cookieParser()); // This is a third-party middleware function in Express
 
 app.use(
   fileUpload({
-    useTempFiles: true,
-    tempFileDir: "/tmp/",
-    limits: { fileSize: 50 * 1024 * 1024 }, // Optional: limit file size to 50MB
-    abortOnLimit: true, // Optional: return 413 when file size is exceeded
+    useTempFiles: false, // Use memory storage instead of temp files
+    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB per file
+    abortOnLimit: true,
   })
-); // This is a third-party middleware function in Express. It parses file uploads and is based on express-fileupload.
-
-
+);
 
 app.use("/api/users", userRouter); 
 app.use("/api/items", itemRouter);

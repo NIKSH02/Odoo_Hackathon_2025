@@ -54,14 +54,17 @@ const createItem = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Points cost cannot be negative");
   }
 
-  if (!req.files || req.files.length === 0) {
+  if (!req.files || !req.files.images) {
     throw new ApiError(400, "At least one image is required");
   }
 
-  // Upload images to cloudinary
+  // Handle single or multiple files
+  const files = Array.isArray(req.files.images) ? req.files.images : [req.files.images];
+
+  // Upload images to cloudinary directly from buffer
   const imageUrls = [];
-  for (const file of req.files) {
-    const result = await uploadOnCloudinary(file.path);
+  for (const file of files) {
+    const result = await uploadOnCloudinary(file.data, file.name);
     if (result) {
       imageUrls.push(result.secure_url);
     }
@@ -78,6 +81,7 @@ const createItem = asyncHandler(async (req, res) => {
     category,
     subCategory,
     size,
+	
     condition,
     pointsCost,
     listedBy: req.user._id,
@@ -112,10 +116,11 @@ const updateItem = asyncHandler(async (req, res) => {
 
   // Handle new images if provided
   let imageUrls = item.images;
-  if (req.files && req.files.length > 0) {
+  if (req.files && req.files.images) {
+    const files = Array.isArray(req.files.images) ? req.files.images : [req.files.images];
     imageUrls = [];
-    for (const file of req.files) {
-      const result = await uploadOnCloudinary(file.path);
+    for (const file of files) {
+      const result = await uploadOnCloudinary(file.data, file.name);
       if (result) {
         imageUrls.push(result.secure_url);
       }

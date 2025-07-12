@@ -1,6 +1,7 @@
 const Order = require("../models/Order.model");
 const Item = require("../models/Item.model");
 const User = require("../models/User.model");
+const SystemConfig = require("../models/SystemConfig.model");
 const ApiError = require("../utils/apiError");
 const ApiResponse = require("../utils/apiResponse");
 const asyncHandler = require("../utils/asynchandler");
@@ -99,17 +100,23 @@ const completeOrder = asyncHandler(async (req, res) => {
 
   // Award points for completed orders
   if (order.orderType === 'swap') {
-    // Award 25 points to both users for successful swap
-    await User.findByIdAndUpdate(order.requester, { $inc: { points: 25 } });
-    await User.findByIdAndUpdate(order.responder, { $inc: { points: 25 } });
+    // Get swap points from system config (default to 25 if not set)
+    const swapPoints = await SystemConfig.getConfig('swapPoints') || 25;
+    
+    // Award points to both users for successful swap
+    await User.findByIdAndUpdate(order.requester, { $inc: { points: swapPoints } });
+    await User.findByIdAndUpdate(order.responder, { $inc: { points: swapPoints } });
 
     // Update item statuses to swapped
     await Item.findByIdAndUpdate(order.itemOffered, { status: 'swapped' });
     await Item.findByIdAndUpdate(order.itemRequested, { status: 'swapped' });
   } else if (order.orderType === 'pointsRedemption') {
-    // Award 25 points to the item lister
+    // Get redemption points from system config (default to 25 if not set)
+    const redemptionPoints = await SystemConfig.getConfig('redemptionPoints') || 25;
+    
+    // Award points to the item lister
     const item = await Item.findById(order.item);
-    await User.findByIdAndUpdate(item.listedBy, { $inc: { points: 25 } });
+    await User.findByIdAndUpdate(item.listedBy, { $inc: { points: redemptionPoints } });
 
     // Update item status to swapped
     await Item.findByIdAndUpdate(order.item, { status: 'swapped' });

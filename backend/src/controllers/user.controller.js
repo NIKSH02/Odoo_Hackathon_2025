@@ -2,7 +2,10 @@ const asynchandler = require("../utils/asynchandler");
 const User = require("../models/User.model");
 const apiError = require("../utils/apiError");
 const ApiResponse = require("../utils/apiResponse");
-const { generateOTP, sendOTPEmail } = require("../utils/emailService");
+const {
+  generateOTP,
+  sendOTPEmail,
+} = require("../utils/emailService.alternative");
 
 // Helper function to generate tokens
 const generateAccessTokenAndRefreshToken = async (userId) => {
@@ -23,10 +26,22 @@ const generateAccessTokenAndRefreshToken = async (userId) => {
 
 // Register User
 const registerUser = asynchandler(async (req, res) => {
-  const { username, email, password } = req.body;
+  const { username, email, password, role, adminSecret } = req.body;
 
   if (!username || !email || !password) {
     throw new apiError(400, "Please provide all the required details");
+  }
+
+  // Check if trying to create admin user
+  if (role === 'admin') {
+    // Check if admin secret is provided and matches environment variable
+    const ADMIN_SECRET = process.env.ADMIN_REGISTRATION_SECRET;
+    if (!ADMIN_SECRET) {
+      throw new apiError(403, "Admin registration is not enabled");
+    }
+    if (!adminSecret || adminSecret !== ADMIN_SECRET) {
+      throw new apiError(403, "Invalid admin secret");
+    }
   }
 
   const existedUser = await User.findOne({
@@ -45,9 +60,10 @@ const registerUser = asynchandler(async (req, res) => {
     username: username.toLowerCase(),
     email,
     password,
-    emailOtp,
-    emailOtpExpiry,
-    isEmailVerified: false,
+    role: role === 'admin' ? 'admin' : 'user', // Only allow admin if secret provided
+    otp: emailOtp,
+    otpExpiry: emailOtpExpiry,
+    isEmailVerified: false, // Require email verification
   });
 
   // Send OTP email
@@ -58,7 +74,7 @@ const registerUser = asynchandler(async (req, res) => {
   }
 
   const createdUser = await User.findById(user._id).select(
-    "-password -refresh_token -emailOtp -loginOtp"
+    "-password -refresh_token -otp -loginOtp"
   );
 
   return res
@@ -90,23 +106,23 @@ const verifyEmailOTP = asynchandler(async (req, res) => {
     throw new apiError(400, "Email is already verified");
   }
 
-  if (!user.emailOtp || user.emailOtp !== otp) {
+  if (!user.otp || user.otp !== otp) {
     throw new apiError(400, "Invalid OTP");
   }
 
-  if (new Date() > user.emailOtpExpiry) {
+  if (new Date() > user.otpExpiry) {
     throw new apiError(400, "OTP has expired");
   }
 
   // Verify email
   user.isEmailVerified = true;
-  user.emailOtp = undefined;
-  user.emailOtpExpiry = undefined;
+  user.otp = undefined;
+  user.otpExpiry = undefined;
   await user.save({ validateBeforeSave: false });
 
   return res
     .status(200)
-    .json(new ApiResponse(200, null, "Email verified successfully"));
+    .json(new ApiResponse(200, "Email verified successfully"));
 });
 
 // Resend Email Verification OTP
@@ -130,8 +146,8 @@ const resendEmailOTP = asynchandler(async (req, res) => {
   const emailOtp = generateOTP();
   const emailOtpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
-  user.emailOtp = emailOtp;
-  user.emailOtpExpiry = emailOtpExpiry;
+  user.otp = emailOtp;
+  user.otpExpiry = emailOtpExpiry;
   await user.save({ validateBeforeSave: false });
 
   const emailSent = await sendOTPEmail(email, emailOtp, "verification");
@@ -142,7 +158,7 @@ const resendEmailOTP = asynchandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(new ApiResponse(200, null, "Verification OTP sent successfully"));
+    .json(new ApiResponse(200, "Verification OTP sent successfully"));
 });
 
 // Login User with Password
@@ -172,7 +188,7 @@ const loginUser = asynchandler(async (req, res) => {
     await generateAccessTokenAndRefreshToken(user._id);
 
   const loggedInUser = await User.findById(user._id).select(
-    "-password -refresh_token -emailOtp -loginOtp"
+    "-password -refresh_token -otp -loginOtp"
   );
 
   const options = {
@@ -226,7 +242,7 @@ const sendLoginOTP = asynchandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(new ApiResponse(200, null, "Login OTP sent successfully"));
+    .json(new ApiResponse(200,  "Login OTP sent successfully"));
 });
 
 // Login with OTP
@@ -264,7 +280,7 @@ const loginWithOTP = asynchandler(async (req, res) => {
     await generateAccessTokenAndRefreshToken(user._id);
 
   const loggedInUser = await User.findById(user._id).select(
-    "-password -refresh_token -emailOtp -loginOtp"
+    "-password -refresh_token -otp -loginOtp"
   );
 
   const options = {
@@ -306,7 +322,7 @@ const logoutUser = asynchandler(async (req, res) => {
     .status(200)
     .clearCookie("refreshToken", options)
     .clearCookie("accessToken", options)
-    .json(new ApiResponse(200, null, "User logged out successfully"));
+    .json(new ApiResponse(200,  "User logged out successfully"));
 });
 
 // Get Current User
@@ -370,6 +386,139 @@ const refreshToken = asynchandler(async (req, res) => {
   }
 });
 
+// Update user profile
+const updateProfile = asynchandler(async (req, res) => {
+  const { fullName, phoneNumber, address, state, country, pinCode } = req.body;
+  
+  const userId = req.user._id;
+  
+  // Build update object with only provided fields
+  const updateData = {};
+  if (fullName !== undefined) updateData.fullName = fullName;
+  if (phoneNumber !== undefined) updateData.phoneNumber = phoneNumber;
+  if (address !== undefined) updateData.address = address;
+  if (state !== undefined) updateData.state = state;
+  if (country !== undefined) updateData.country = country;
+  if (pinCode !== undefined) updateData.pinCode = pinCode;
+  
+  const updatedUser = await User.findByIdAndUpdate(
+    userId,
+    updateData,
+    { new: true, runValidators: true }
+  ).select("-password -refresh_token -otp -otpExpiry");
+  
+  if (!updatedUser) {
+    throw new apiError(404, "User not found");
+  }
+  
+  res.status(200).json(
+    new ApiResponse(200, updatedUser, "Profile updated successfully")
+  );
+});
+
+// Get profile completion status
+const getProfileStatus = asynchandler(async (req, res) => {
+  const user = req.user;
+  
+  const requiredFields = {
+    fullName: !!user.fullName,
+    phoneNumber: !!user.phoneNumber,
+    address: !!user.address,
+    state: !!user.state,
+    country: !!user.country,
+    pinCode: !!user.pinCode,
+    isEmailVerified: user.isEmailVerified
+  };
+  
+  const completedFields = Object.values(requiredFields).filter(Boolean).length;
+  const totalFields = Object.keys(requiredFields).length;
+  const completionPercentage = Math.round((completedFields / totalFields) * 100);
+  
+  const missingFields = Object.keys(requiredFields).filter(
+    field => !requiredFields[field]
+  );
+  
+  res.status(200).json(
+    new ApiResponse(200, {
+      isComplete: user.isProfileComplete,
+      completionPercentage,
+      requiredFields,
+      missingFields,
+      user: {
+        fullName: user.fullName,
+        phoneNumber: user.phoneNumber,
+        address: user.address,
+        state: user.state,
+        country: user.country,
+        pinCode: user.pinCode,
+        isEmailVerified: user.isEmailVerified
+      }
+    }, "Profile status retrieved successfully")
+  );
+});
+
+// Register Admin User (separate endpoint for better security)
+const registerAdmin = asynchandler(async (req, res) => {
+  const { username, email, password, adminSecret } = req.body;
+
+  if (!username || !email || !password || !adminSecret) {
+    throw new apiError(400, "Please provide all required details including admin secret");
+  }
+
+  // Check admin secret
+  const ADMIN_SECRET = process.env.ADMIN_REGISTRATION_SECRET;
+  if (!ADMIN_SECRET) {
+    throw new apiError(403, "Admin registration is not enabled. Set ADMIN_REGISTRATION_SECRET in environment variables.");
+  }
+  
+  if (adminSecret !== ADMIN_SECRET) {
+    throw new apiError(403, "Invalid admin secret");
+  }
+
+  const existedUser = await User.findOne({
+    $or: [{ email: email }, { username: username }],
+  }).lean();
+
+  if (existedUser) {
+    throw new apiError(409, "User already exists");
+  }
+
+  // Generate OTP for email verification
+  const emailOtp = generateOTP();
+  const emailOtpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+  const user = await User.create({
+    username: username.toLowerCase(),
+    email,
+    password,
+    role: 'admin',
+    otp: emailOtp,
+    otpExpiry: emailOtpExpiry,
+    isEmailVerified: false, // Require email verification
+  });
+
+  // Send OTP email
+  const emailSent = await sendOTPEmail(email, emailOtp, "verification");
+
+  if (!emailSent) {
+    throw new apiError(500, "Failed to send verification email");
+  }
+
+  const createdAdmin = await User.findById(user._id).select(
+    "-password -refresh_token -otp -loginOtp"
+  );
+
+  return res
+    .status(201)
+    .json(
+      new ApiResponse(
+        201,
+        createdAdmin,
+        "Admin user registered successfully. Please check your email for verification OTP."
+      )
+    );
+});
+
 module.exports = {
   registerUser,
   verifyEmailOTP,
@@ -380,4 +529,7 @@ module.exports = {
   logoutUser,
   getCurrentUser,
   refreshToken,
+  updateProfile,
+  getProfileStatus,
+  registerAdmin,
 };
