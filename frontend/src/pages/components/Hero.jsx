@@ -1,7 +1,13 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 
 export default function Hero() {
+  const navigate = useNavigate();
+
+  const handleBrowseItems = () => {
+    navigate('/browse');
+  };
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -49,7 +55,7 @@ export default function Hero() {
 
   return (
     <motion.section 
-      className="px-6 py-16 bg-gray-50 mt-8"
+      className="px-6 py-20 bg-gray-50 mt-16"
       initial={{ opacity: 0, y: 50 }}
       whileInView={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.8 }}
@@ -104,6 +110,7 @@ export default function Hero() {
             </motion.button>
             <motion.button 
               className="bg-gray-200 text-gray-800 px-6 py-2 rounded-lg hover:bg-gray-300"
+              onClick={handleBrowseItems}
               whileHover={{ 
                 scale: 1.05,
                 backgroundColor: "#D1D5DB"

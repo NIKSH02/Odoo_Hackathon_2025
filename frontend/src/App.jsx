@@ -4,6 +4,8 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import CssBaseline from '@mui/material/CssBaseline';
 import Authentication from './pages/Authentication';
 import Home from './pages/Home';
+import Browse from './pages/Browse';
+import About from './pages/About';
 import AddItemForm from './pages/AddItemForm';
 import ReWearUserDashboard from './pages/RewearUserDashboard';
 
@@ -44,6 +46,14 @@ function App() {
           <Route 
             path='/home' 
             element={<Home onLogout={handleLogout} />} 
+          />
+          <Route 
+            path='/browse' 
+            element={<Browse onLogout={handleLogout} />} 
+          />
+          <Route 
+            path='/about' 
+            element={<About onLogout={handleLogout} />} 
           />
           <Route 
             path='/' 
