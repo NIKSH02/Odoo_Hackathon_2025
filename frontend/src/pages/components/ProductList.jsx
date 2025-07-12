@@ -656,7 +656,13 @@ const SwapRequestModal = ({ selectedProduct, userListings, onClose }) => {
       <div className="mb-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold">Your Items Available for Swap:</h3>
-          <button className="flex items-center space-x-2 text-blue-400 hover:text-blue-300 transition-colors">
+          <button 
+            onClick={() => {
+              onClose();
+              navigate('/addItem');
+            }}
+            className="flex items-center space-x-2 text-blue-400 hover:text-blue-300 transition-colors"
+          >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
             </svg>
@@ -670,7 +676,15 @@ const SwapRequestModal = ({ selectedProduct, userListings, onClose }) => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
             </svg>
             <p className="text-gray-400 mb-2">No items in your listings</p>
-            <button className="text-blue-400 hover:text-blue-300 text-sm">Add your first item</button>
+            <button 
+              onClick={() => {
+                onClose();
+                navigate('/addItem');
+              }}
+              className="text-blue-400 hover:text-blue-300 text-sm"
+            >
+              Add your first item
+            </button>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../hooks/useAuthContext';
 
-export default function Navbar({ onLogout }) {
+export default function Navbar() {
   const navigate = useNavigate();
+  const { isAuthenticated, user, logout } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const toggleMobileMenu = () => {
@@ -31,9 +33,31 @@ export default function Navbar({ onLogout }) {
     closeMobileMenu();
   };
 
+  const handleAddItem = () => {
+    // Navigate to add item form page
+    navigate('/addItem');
+    closeMobileMenu();
+  };
+
   const handleLogin = () => {
     // Navigate to login/signup page using React Router
-    navigate('/login');
+    navigate('/auth');
+    closeMobileMenu();
+  };
+
+  const handleDashboard = () => {
+    // Navigate to dashboard
+    navigate('/dashboard');
+    closeMobileMenu();
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/home');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
     closeMobileMenu();
   };
 
@@ -85,6 +109,12 @@ export default function Navbar({ onLogout }) {
         </button>
         <button onClick={handleAbout} className="hover:text-black transition-colors duration-200">About</button>
         <button onClick={handleMessages} className="hover:text-black transition-colors duration-200">Messages</button>
+        <button 
+          onClick={handleAddItem} 
+          className="bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors duration-200 font-medium"
+        >
+          + Add List
+        </button>
          <button 
               onClick={handleDash}
               className="hover:text-black transition-colors duration-200"
@@ -95,6 +125,37 @@ export default function Navbar({ onLogout }) {
 
       {/* Desktop Auth Buttons */}
       <div className="hidden md:flex space-x-4">
+        {isAuthenticated ? (
+          <>
+            <button 
+              onClick={handleDashboard}
+              className="text-sm font-medium text-gray-700 hover:text-black transition-colors duration-200"
+            >
+              Dashboard
+            </button>
+            <button 
+              onClick={handleLogout}
+              className="bg-black text-white px-4 py-1.5 rounded-lg hover:bg-gray-800 transition-colors duration-200"
+            >
+              Logout
+            </button>
+          </>
+        ) : (
+          <>
+            <button 
+              onClick={handleLogin}
+              className="text-sm font-medium text-gray-700 hover:text-black transition-colors duration-200"
+            >
+              Login
+            </button>
+            <button 
+              onClick={handleLogin}
+              className="bg-black text-white px-4 py-1.5 rounded-lg hover:bg-gray-800 transition-colors duration-200"
+            >
+              Sign Up
+            </button>
+          </>
+        )}
         
         <button 
           onClick={handleLogin}
@@ -181,21 +242,46 @@ export default function Navbar({ onLogout }) {
           >
             Messages
           </button>
+          <button 
+            onClick={handleAddItem} 
+            className="w-full bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-800 transition-colors duration-200 text-center font-medium"
+          >
+            + Add List
+          </button>
           
           {/* Mobile Auth Buttons */}
           <div className="pt-6 border-t border-gray-200 space-y-4">
-            <button 
-              onClick={handleLogin}
-              className="w-full text-left text-lg font-medium text-gray-700 hover:text-black transition-colors duration-200 py-2"
-            >
-              Login
-            </button>
-            <button 
-              onClick={handleLogin}
-              className="w-full bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-800 transition-colors duration-200 text-center font-medium"
-            >
-              Sign Up
-            </button>
+            {isAuthenticated ? (
+              <>
+                <button 
+                  onClick={handleDashboard}
+                  className="w-full text-left text-lg font-medium text-gray-700 hover:text-black transition-colors duration-200 py-2"
+                >
+                  Dashboard
+                </button>
+                <button 
+                  onClick={handleLogout}
+                  className="w-full bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-800 transition-colors duration-200 text-center font-medium"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <button 
+                  onClick={handleLogin}
+                  className="w-full text-left text-lg font-medium text-gray-700 hover:text-black transition-colors duration-200 py-2"
+                >
+                  Login
+                </button>
+                <button 
+                  onClick={handleLogin}
+                  className="w-full bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-800 transition-colors duration-200 text-center font-medium"
+                >
+                  Sign Up
+                </button>
+              </>
+            )}
           </div>
         </nav>
       </div>
