@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import CssBaseline from '@mui/material/CssBaseline';
-import AppTheme from './shared-theme/AppTheme';
 import Authentication from './pages/Authentication';
 import Home from './pages/Home';
 
@@ -39,7 +38,7 @@ function App() {
   }
 
   return (
-    <AppTheme>
+    <>
       <CssBaseline />
       <Router>
         <Routes>
@@ -61,7 +60,7 @@ function App() {
           />
         </Routes>
       </Router>
-    </AppTheme>
+    </>
   );
 }
 
