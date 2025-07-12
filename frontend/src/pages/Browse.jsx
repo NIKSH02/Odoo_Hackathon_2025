@@ -1,20 +1,19 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import Modal from '../Modal';
+import { motion, AnimatePresence } from 'framer-motion';
+import Navbar from './components/Navbar';
+import Modal from './Modal';
 
-export default function ProductList() {
-  const navigate = useNavigate();
+export default function Browse({ onLogout }) {
   const [favorites, setFavorites] = useState(new Set());
+  const [filterCategory, setFilterCategory] = useState('All');
+  const [filterCondition, setFilterCondition] = useState('All');
+  const [sortBy, setSortBy] = useState('newest');
   const [isSwapModalOpen, setIsSwapModalOpen] = useState(false);
   const [selectedProductForSwap, setSelectedProductForSwap] = useState(null);
   const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
   const [selectedProductForPurchase, setSelectedProductForPurchase] = useState(null);
 
-  const handleBrowseAll = () => {
-    navigate('/browse');
-  };
-
+  // Handler functions for modals
   const handleRequestSwap = (product) => {
     setSelectedProductForSwap(product);
     setIsSwapModalOpen(true);
@@ -75,51 +74,7 @@ export default function ProductList() {
     }
   ];
 
-  // Animation variants
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-        delayChildren: 0.2
-      }
-    }
-  };
-
-  const cardVariants = {
-    hidden: { 
-      y: 50, 
-      opacity: 0,
-      scale: 0.9
-    },
-    visible: {
-      y: 0,
-      opacity: 1,
-      scale: 1,
-      transition: {
-        duration: 0.6,
-        ease: "easeOut"
-      }
-    }
-  };
-
-  const headerVariants = {
-    hidden: { 
-      y: -30, 
-      opacity: 0 
-    },
-    visible: {
-      y: 0,
-      opacity: 1,
-      transition: {
-        duration: 0.6,
-        ease: "easeOut"
-      }
-    }
-  };
-
-  // Sample product data matching your Item model schema
+  // Extended product data - all items displayed here
   const products = [
     {
       _id: "507f1f77bcf86cd799439011",
@@ -211,7 +166,7 @@ export default function ProductList() {
       size: "M",
       condition: "new",
       pointsCost: 250,
-      status: "swapped",
+      status: "available",
       approved: true,
       listedBy: {
         _id: "507f1f77bcf86cd799439020",
@@ -240,6 +195,46 @@ export default function ProductList() {
       },
       createdAt: "2024-01-11T13:10:00Z",
       updatedAt: "2024-01-11T13:10:00Z"
+    },
+    {
+      _id: "507f1f77bcf86cd799439023",
+      title: "Cozy Winter Sweater",
+      description: "Warm wool sweater perfect for cold weather, in excellent condition.",
+      images: ["https://images.unsplash.com/photo-1434389677669-e08b4cac3105?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80"],
+      category: "Women",
+      subCategory: "casual",
+      size: "L",
+      condition: "good",
+      pointsCost: 90,
+      status: "available",
+      approved: true,
+      listedBy: {
+        _id: "507f1f77bcf86cd799439024",
+        username: "mia_c",
+        email: "mia@example.com"
+      },
+      createdAt: "2024-01-09T12:30:00Z",
+      updatedAt: "2024-01-09T12:30:00Z"
+    },
+    {
+      _id: "507f1f77bcf86cd799439025",
+      title: "Trendy Sunglasses",
+      description: "Stylish Ray-Ban sunglasses, perfect for sunny days and outdoor activities.",
+      images: ["https://images.unsplash.com/photo-1572635196237-14b3f281503f?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80"],
+      category: "Unisex",
+      subCategory: "accessories",
+      size: "One Size",
+      condition: "like-new",
+      pointsCost: 80,
+      status: "available",
+      approved: true,
+      listedBy: {
+        _id: "507f1f77bcf86cd799439026",
+        username: "tom_h",
+        email: "tom@example.com"
+      },
+      createdAt: "2024-01-13T15:45:00Z",
+      updatedAt: "2024-01-13T15:45:00Z"
     }
   ];
 
@@ -291,267 +286,338 @@ export default function ProductList() {
     return `${Math.floor(diffDays / 7)} weeks ago`;
   };
 
-  // Filter only approved and available items for display
-  const availableProducts = products.filter(product => product.approved);
-  
-  // Show only first 4 items for home page display
-  const displayProducts = availableProducts.slice(0, 4);
+  // Filter and sort products
+  const filteredProducts = products
+    .filter(product => product.approved && product.status === 'available')
+    .filter(product => filterCategory === 'All' || product.category === filterCategory)
+    .filter(product => filterCondition === 'All' || product.condition === filterCondition)
+    .sort((a, b) => {
+      switch (sortBy) {
+        case 'newest':
+          return new Date(b.createdAt) - new Date(a.createdAt);
+        case 'oldest':
+          return new Date(a.createdAt) - new Date(b.createdAt);
+        case 'price-low':
+          return a.pointsCost - b.pointsCost;
+        case 'price-high':
+          return b.pointsCost - a.pointsCost;
+        default:
+          return 0;
+      }
+    });
+
+  // Animation variants
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+        delayChildren: 0.2
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { 
+      y: 50, 
+      opacity: 0,
+      scale: 0.9
+    },
+    visible: {
+      y: 0,
+      opacity: 1,
+      scale: 1,
+      transition: {
+        duration: 0.5,
+        ease: "easeOut"
+      }
+    }
+  };
+
+  const filterVariants = {
+    hidden: { x: -30, opacity: 0 },
+    visible: {
+      x: 0,
+      opacity: 1,
+      transition: {
+        duration: 0.5,
+        ease: "easeOut"
+      }
+    }
+  };
 
   return (
-    <motion.section 
-      className="px-6 py-8"
-      initial={{ opacity: 0, y: 30 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.8 }}
-      viewport={{ once: true }}
-    >
-      <motion.div 
-        className="flex justify-between items-center mb-6"
-        variants={headerVariants}
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true }}
-      >
-        <motion.h2 
-          className="text-2xl font-semibold"
-          initial={{ x: -30, opacity: 0 }}
-          whileInView={{ x: 0, opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          viewport={{ once: true }}
-        >
-          Available Items
-        </motion.h2>
-        <motion.div 
-          className="text-sm text-gray-500"
-          initial={{ x: 30, opacity: 0 }}
-          whileInView={{ x: 0, opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-          viewport={{ once: true }}
-        >
-          Showing {displayProducts.filter(p => p.status === 'available').length} of {availableProducts.filter(p => p.status === 'available').length} items available for swap
-        </motion.div>
-      </motion.div>
+    <div className="min-h-screen bg-gray-50">
+      <Navbar onLogout={onLogout} />
       
-      <motion.div 
-        className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5"
-        variants={containerVariants}
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, amount: 0.1 }}
+      {/* Hero Section */}
+      <motion.section 
+        className="bg-gradient-to-r from-gray-900 via-black to-gray-900 text-white py-16"
+        initial={{ opacity: 0, y: -50 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8 }}
       >
-        {displayProducts.map((product, index) => (
+        <div className="max-w-7xl mx-auto px-6 text-center">
+          <motion.h1 
+            className="text-4xl md:text-6xl font-bold mb-4"
+            initial={{ scale: 0.5, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+          >
+            Browse All Items
+          </motion.h1>
+          <motion.p 
+            className="text-lg text-gray-300 max-w-2xl mx-auto"
+            initial={{ y: 30, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+          >
+            Discover amazing clothing items from our community. Find your perfect match and start swapping!
+          </motion.p>
           <motion.div 
-            key={product._id} 
-            className={`bg-white border border-gray-200 rounded-2xl shadow-lg hover:shadow-2xl hover:border-gray-300 hover:-translate-y-2 transition-all duration-500 ease-out overflow-hidden group cursor-pointer transform hover:scale-[1.02] ${
-              product.status !== 'available' ? 'opacity-75' : ''
-            }`}
-            variants={cardVariants}
-            custom={index}
-            onClick={() => console.log('Card clicked:', product.title)}
-            whileHover={{ 
-              y: -8,
-              scale: 1.02,
-              transition: { duration: 0.3 }
-            }}
-            whileTap={{ scale: 0.98 }}
+            className="mt-8 text-2xl"
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ duration: 0.5, delay: 0.6 }}
           >
-            {/* Image Section */}
-            <div className="relative overflow-hidden">
-              <img
-                src={product.images[0]}
-                alt={product.title}
-                className="w-full h-40 object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
-              />
-              
-              {/* Gradient Overlay on Hover */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              
-              {/* Favorite Button */}
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleFavorite(product._id);
-                }}
-                className="absolute top-3 right-3 p-2 bg-white/90 backdrop-blur-sm rounded-full hover:bg-white hover:scale-110 transition-all duration-300 shadow-lg hover:shadow-xl"
-              >
-                <span className={`text-lg transition-all duration-300 ${favorites.has(product._id) ? 'text-red-500 scale-125' : 'text-gray-400 hover:text-red-400'}`}>
-                  {favorites.has(product._id) ? '❤️' : '🤍'}
-                </span>
-              </button>
-
-              {/* Status Badge */}
-              <div className="absolute top-3 left-3 transform group-hover:scale-105 transition-transform duration-300">
-                <span className={`px-3 py-1 text-xs font-medium rounded-full shadow-lg ${
-                  product.status === 'available' 
-                    ? 'bg-green-100 text-green-800 group-hover:bg-green-200' 
-                    : product.status === 'pending'
-                    ? 'bg-yellow-100 text-yellow-800 group-hover:bg-yellow-200'
-                    : 'bg-red-100 text-red-800 group-hover:bg-red-200'
-                }`}>
-                  {product.status.charAt(0).toUpperCase() + product.status.slice(1)}
-                </span>
-              </div>
-
-              {/* Category Tag */}
-              <div className="absolute bottom-3 left-3 transform group-hover:scale-105 transition-transform duration-300">
-                <span className="px-3 py-1 text-xs font-medium bg-white/90 backdrop-blur-sm text-gray-700 rounded-full shadow-lg">
-                  {product.category}
-                </span>
-              </div>
-            </div>
-
-            {/* Content Section */}
-            <div className="p-4 group-hover:bg-gray-50 transition-colors duration-300">
-              {/* Title and Sub-category */}
-              <div className="mb-2">
-                <h3 className="font-bold text-gray-900 truncate text-base group-hover:text-blue-600 transition-colors duration-300">{product.title}</h3>
-                <p className="text-xs text-gray-600 group-hover:text-gray-700 transition-colors duration-300">{getSubCategoryLabel(product.subCategory)} • Size {product.size}</p>
-              </div>
-
-              {/* Condition Badge */}
-              <div className="mb-2">
-                <span className={`px-2 py-1 text-xs font-semibold rounded-full transform group-hover:scale-105 transition-all duration-300 shadow-sm ${getConditionColor(product.condition)}`}>
-                  {getConditionLabel(product.condition)}
-                </span>
-              </div>
-
-              {/* Description */}
-              <p className="text-xs text-gray-600 mb-3 line-clamp-2 group-hover:text-gray-700 transition-colors duration-300 leading-relaxed">
-                {product.description}
-              </p>
-
-              {/* Points Cost */}
-              <div className="flex items-center justify-between mb-3 p-2 bg-gray-50 group-hover:bg-white rounded-lg transition-colors duration-300">
-                <div className="flex items-center space-x-1">
-                  <span className="text-lg group-hover:scale-110 transition-transform duration-300">💎</span>
-                  <span className="font-bold text-gray-900 text-base group-hover:text-blue-600 transition-colors duration-300">{product.pointsCost}</span>
-                  <span className="text-xs text-gray-500 font-medium">points</span>
-                </div>
-                <span className="text-xs text-gray-500 group-hover:text-gray-600 transition-colors duration-300">{formatDate(product.createdAt)}</span>
-              </div>
-
-              {/* Listed By */}
-              <div className="text-xs text-gray-500 mb-3 group-hover:text-gray-600 transition-colors duration-300">
-                <span className="font-medium">Listed by @{product.listedBy.username}</span>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="space-y-2">
-                <button 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (product.status === 'available') {
-                      handleRequestSwap(product);
-                    }
-                  }}
-                  className={`w-full py-2 px-3 rounded-lg font-semibold text-sm transition-all duration-300 transform hover:scale-105 active:scale-95 border ${
-                    product.status === 'available'
-                      ? 'bg-gradient-to-r from-gray-800 to-black hover:from-gray-700 hover:to-gray-900 text-white shadow-lg hover:shadow-xl border-gray-700'
-                      : 'bg-gray-200 text-gray-500 cursor-not-allowed border-gray-300'
-                  }`}
-                  disabled={product.status !== 'available'}
-                >
-                  {product.status === 'available' 
-                    ? 'Request Swap' 
-                    : product.status === 'pending' 
-                    ? 'Swap Pending' 
-                    : 'Already Swapped'}
-                </button>
-                
-                {product.status === 'available' && (
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleBuyWithPoints(product);
-                    }}
-                    className="w-full py-2 px-3 rounded-lg font-semibold text-sm transition-all duration-300 transform hover:scale-105 active:scale-95 border bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg hover:shadow-xl border-blue-600 flex items-center justify-center space-x-2"
-                  >
-                    <span className="text-base">💎</span>
-                    <span>Buy with Points</span>
-                  </button>
-                )}
-              </div>
-            </div>
+            <span className="bg-white text-black px-4 py-2 rounded-full font-bold">
+              {filteredProducts.length} items available
+            </span>
           </motion.div>
-        ))}
-      </motion.div>
+        </div>
+      </motion.section>
 
-      {/* Browse All Button */}
-      <motion.div 
-        className="text-center mt-12"
-        initial={{ opacity: 0, y: 30 }}
-        whileInView={{ opacity: 1, y: 0 }}
+      {/* Filters Section */}
+      <motion.section 
+        className="py-8 bg-white shadow-sm"
+        initial={{ y: 50, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.6, delay: 0.3 }}
-        viewport={{ once: true }}
       >
-        <motion.button 
-          onClick={handleBrowseAll}
-          className="relative bg-gradient-to-r from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 text-gray-700 hover:text-gray-900 px-10 py-5 rounded-2xl shadow-lg border border-gray-300 hover:border-gray-400 transition-all duration-300 font-bold text-lg overflow-hidden group"
-          whileHover={{ 
-            scale: 1.05,
-            boxShadow: "0 20px 40px rgba(0, 0, 0, 0.15)",
-            borderColor: "rgb(156, 163, 175)",
-            transition: { duration: 0.3 }
-          }}
-          whileTap={{ 
-            scale: 0.95,
-            transition: { duration: 0.1 }
-          }}
-          initial={{ scale: 0.9, opacity: 0 }}
-          whileInView={{ scale: 1, opacity: 1 }}
-          transition={{ 
-            duration: 0.5, 
-            delay: 0.5,
-            type: "spring",
-            stiffness: 200 
-          }}
-          viewport={{ once: true }}
-        >
-          {/* Animated background overlay */}
-          <motion.div
-            className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-blue-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-            initial={{ x: "-100%" }}
-            whileHover={{ x: "100%" }}
-            transition={{ duration: 0.6, ease: "easeInOut" }}
-          />
-          
-          {/* Glow effect */}
-          <motion.div
-            className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl"
-            whileHover={{ 
-              boxShadow: "inset 0 0 20px rgba(255, 255, 255, 0.3)" 
-            }}
-          />
-          
-          <motion.span
-            className="relative z-10 inline-flex items-center space-x-3"
-            whileHover={{ 
-              y: -2,
-              transition: { duration: 0.2 }
-            }}
-          >
-            <motion.span
-              className="inline-block"
-              whileHover={{ 
-                rotate: [0, -10, 10, 0],
-                transition: { duration: 0.5 }
-              }}
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="flex flex-wrap gap-6 items-center justify-between">
+            <motion.div 
+              className="flex flex-wrap gap-4"
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
             >
-              🔍
-            </motion.span>
-            <span>Browse All Items ({availableProducts.filter(p => p.status === 'available').length} total)</span>
-            <motion.span
-              className="inline-block"
-              whileHover={{ 
-                x: 3,
-                transition: { duration: 0.2 }
-              }}
+              <motion.div variants={filterVariants}>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                <select
+                  value={filterCategory}
+                  onChange={(e) => setFilterCategory(e.target.value)}
+                  className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
+                >
+                  <option value="All">All Categories</option>
+                  <option value="Women">Women</option>
+                  <option value="Men">Men</option>
+                  <option value="Unisex">Unisex</option>
+                </select>
+              </motion.div>
+
+              <motion.div variants={filterVariants}>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Condition</label>
+                <select
+                  value={filterCondition}
+                  onChange={(e) => setFilterCondition(e.target.value)}
+                  className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
+                >
+                  <option value="All">All Conditions</option>
+                  <option value="new">New</option>
+                  <option value="like-new">Like New</option>
+                  <option value="good">Good</option>
+                  <option value="fair">Fair</option>
+                  <option value="worn">Worn</option>
+                </select>
+              </motion.div>
+
+              <motion.div variants={filterVariants}>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Sort By</label>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
+                >
+                  <option value="newest">Newest First</option>
+                  <option value="oldest">Oldest First</option>
+                  <option value="price-low">Points: Low to High</option>
+                  <option value="price-high">Points: High to Low</option>
+                </select>
+              </motion.div>
+            </motion.div>
+
+            <motion.div 
+              className="text-sm text-gray-600"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.8 }}
             >
-              →
-            </motion.span>
-          </motion.span>
-        </motion.button>
-      </motion.div>
+              Showing {filteredProducts.length} of {products.filter(p => p.approved && p.status === 'available').length} items
+            </motion.div>
+          </div>
+        </div>
+      </motion.section>
+
+      {/* Products Grid */}
+      <motion.section 
+        className="py-12"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.8, delay: 0.4 }}
+      >
+        <div className="max-w-7xl mx-auto px-6">
+          <AnimatePresence>
+            <motion.div 
+              className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6"
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+            >
+              {filteredProducts.map((product, index) => (
+                <motion.div
+                  key={product._id}
+                  variants={itemVariants}
+                  custom={index}
+                  whileHover={{ 
+                    scale: 1.02,
+                    y: -10,
+                    transition: { duration: 0.3 }
+                  }}
+                  className="bg-white border border-gray-200 rounded-2xl shadow-lg hover:shadow-2xl hover:border-gray-300 transition-all duration-500 ease-out overflow-hidden group cursor-pointer"
+                  onClick={() => console.log('Card clicked:', product.title)}
+                  layout
+                >
+                  {/* Image Section */}
+                  <div className="relative overflow-hidden">
+                    <img
+                      src={product.images[0]}
+                      alt={product.title}
+                      className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
+                    />
+                    
+                    {/* Gradient Overlay on Hover */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                    
+                    {/* Favorite Button */}
+                    <motion.button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleFavorite(product._id);
+                      }}
+                      className="absolute top-3 right-3 p-2 bg-white/90 backdrop-blur-sm rounded-full hover:bg-white hover:scale-110 transition-all duration-300 shadow-lg hover:shadow-xl"
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                    >
+                      <span className={`text-lg transition-all duration-300 ${favorites.has(product._id) ? 'text-red-500 scale-125' : 'text-gray-400 hover:text-red-400'}`}>
+                        {favorites.has(product._id) ? '❤️' : '🤍'}
+                      </span>
+                    </motion.button>
+
+                    {/* Status Badge */}
+                    <div className="absolute top-3 left-3 transform group-hover:scale-105 transition-transform duration-300">
+                      <span className={`px-3 py-1 text-xs font-medium rounded-full shadow-lg ${
+                        product.status === 'available' 
+                          ? 'bg-green-100 text-green-800 group-hover:bg-green-200' 
+                          : product.status === 'pending'
+                          ? 'bg-yellow-100 text-yellow-800 group-hover:bg-yellow-200'
+                          : 'bg-red-100 text-red-800 group-hover:bg-red-200'
+                      }`}>
+                        {product.status.charAt(0).toUpperCase() + product.status.slice(1)}
+                      </span>
+                    </div>
+
+                    {/* Category Tag */}
+                    <div className="absolute bottom-3 left-3 transform group-hover:scale-105 transition-transform duration-300">
+                      <span className="px-3 py-1 text-xs font-medium bg-black/80 group-hover:bg-black text-white rounded-full shadow-lg">
+                        {product.category}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Content Section */}
+                  <div className="p-4 group-hover:bg-gray-50 transition-colors duration-300">
+                    {/* Title and Sub-category */}
+                    <div className="mb-2">
+                      <h3 className="font-bold text-gray-900 truncate text-base group-hover:text-black transition-colors duration-300">{product.title}</h3>
+                      <p className="text-xs text-gray-600 group-hover:text-gray-700 transition-colors duration-300">{getSubCategoryLabel(product.subCategory)} • Size {product.size}</p>
+                    </div>
+
+                    {/* Condition Badge */}
+                    <div className="mb-2">
+                      <span className={`px-2 py-1 text-xs font-semibold rounded-full transform group-hover:scale-105 transition-all duration-300 shadow-sm ${getConditionColor(product.condition)}`}>
+                        {getConditionLabel(product.condition)}
+                      </span>
+                    </div>
+
+                    {/* Description */}
+                    <p className="text-xs text-gray-600 mb-3 line-clamp-2 group-hover:text-gray-700 transition-colors duration-300 leading-relaxed">
+                      {product.description}
+                    </p>
+
+                    {/* Points Cost */}
+                    <div className="flex items-center justify-between mb-3 p-2 bg-gray-50 group-hover:bg-white rounded-lg transition-colors duration-300">
+                      <div className="flex items-center space-x-1">
+                        <span className="text-lg group-hover:scale-110 transition-transform duration-300">💎</span>
+                        <span className="font-bold text-gray-900 text-base group-hover:text-black transition-colors duration-300">{product.pointsCost}</span>
+                        <span className="text-xs text-gray-500 font-medium">points</span>
+                      </div>
+                      <span className="text-xs text-gray-500 group-hover:text-gray-600 transition-colors duration-300">{formatDate(product.createdAt)}</span>
+                    </div>
+
+                    {/* Listed By */}
+                    <div className="text-xs text-gray-500 mb-3 group-hover:text-gray-600 transition-colors duration-300">
+                      <span className="font-medium">Listed by @{product.listedBy.username}</span>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="space-y-2">
+                      <motion.button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRequestSwap(product);
+                        }}
+                        className="w-full py-2 px-3 rounded-lg font-semibold text-sm bg-gradient-to-r from-gray-800 to-black hover:from-gray-700 hover:to-gray-900 text-white shadow-lg hover:shadow-xl border border-gray-700 transition-all duration-300"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        Request Swap
+                      </motion.button>
+                      
+                      <motion.button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleBuyWithPoints(product);
+                        }}
+                        className="w-full py-2 px-3 rounded-lg font-semibold text-sm bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg hover:shadow-xl border border-blue-600 transition-all duration-300 flex items-center justify-center space-x-2"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <span className="text-base">💎</span>
+                        <span>Buy with Points</span>
+                      </motion.button>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </motion.div>
+          </AnimatePresence>
+
+          {filteredProducts.length === 0 && (
+            <motion.div 
+              className="text-center py-16"
+              initial={{ opacity: 0, y: 50 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+            >
+              <div className="text-6xl mb-4">🔍</div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">No items found</h3>
+              <p className="text-gray-600">Try adjusting your filters to see more results.</p>
+            </motion.div>
+          )}
+        </div>
+      </motion.section>
 
       {/* Swap Request Modal */}
       <Modal 
@@ -577,7 +643,7 @@ export default function ProductList() {
           onClose={closePurchaseModal}
         />
       </Modal>
-    </motion.section>
+    </div>
   );
 }
 
