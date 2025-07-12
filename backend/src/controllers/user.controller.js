@@ -2,7 +2,10 @@ const asynchandler = require("../utils/asynchandler");
 const User = require("../models/User.model");
 const apiError = require("../utils/apiError");
 const ApiResponse = require("../utils/apiResponse");
-const { generateOTP, sendOTPEmail } = require("../utils/emailService");
+const {
+  generateOTP,
+  sendOTPEmail,
+} = require("../utils/emailService.alternative");
 
 // Helper function to generate tokens
 const generateAccessTokenAndRefreshToken = async (userId) => {
@@ -45,9 +48,9 @@ const registerUser = asynchandler(async (req, res) => {
     username: username.toLowerCase(),
     email,
     password,
-    emailOtp,
-    emailOtpExpiry,
-    isEmailVerified: false,
+    otp: emailOtp,
+    otpExpiry: emailOtpExpiry,
+    isEmailVerified: false, // Require email verification
   });
 
   // Send OTP email
@@ -58,7 +61,7 @@ const registerUser = asynchandler(async (req, res) => {
   }
 
   const createdUser = await User.findById(user._id).select(
-    "-password -refresh_token -emailOtp -loginOtp"
+    "-password -refresh_token -otp -loginOtp"
   );
 
   return res
@@ -90,23 +93,23 @@ const verifyEmailOTP = asynchandler(async (req, res) => {
     throw new apiError(400, "Email is already verified");
   }
 
-  if (!user.emailOtp || user.emailOtp !== otp) {
+  if (!user.otp || user.otp !== otp) {
     throw new apiError(400, "Invalid OTP");
   }
 
-  if (new Date() > user.emailOtpExpiry) {
+  if (new Date() > user.otpExpiry) {
     throw new apiError(400, "OTP has expired");
   }
 
   // Verify email
   user.isEmailVerified = true;
-  user.emailOtp = undefined;
-  user.emailOtpExpiry = undefined;
+  user.otp = undefined;
+  user.otpExpiry = undefined;
   await user.save({ validateBeforeSave: false });
 
   return res
     .status(200)
-    .json(new ApiResponse(200, null, "Email verified successfully"));
+    .json(new ApiResponse(200, "Email verified successfully"));
 });
 
 // Resend Email Verification OTP
@@ -130,8 +133,8 @@ const resendEmailOTP = asynchandler(async (req, res) => {
   const emailOtp = generateOTP();
   const emailOtpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
-  user.emailOtp = emailOtp;
-  user.emailOtpExpiry = emailOtpExpiry;
+  user.otp = emailOtp;
+  user.otpExpiry = emailOtpExpiry;
   await user.save({ validateBeforeSave: false });
 
   const emailSent = await sendOTPEmail(email, emailOtp, "verification");
@@ -142,7 +145,7 @@ const resendEmailOTP = asynchandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(new ApiResponse(200, null, "Verification OTP sent successfully"));
+    .json(new ApiResponse(200, "Verification OTP sent successfully"));
 });
 
 // Login User with Password
@@ -172,7 +175,7 @@ const loginUser = asynchandler(async (req, res) => {
     await generateAccessTokenAndRefreshToken(user._id);
 
   const loggedInUser = await User.findById(user._id).select(
-    "-password -refresh_token -emailOtp -loginOtp"
+    "-password -refresh_token -otp -loginOtp"
   );
 
   const options = {
@@ -226,7 +229,7 @@ const sendLoginOTP = asynchandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(new ApiResponse(200, null, "Login OTP sent successfully"));
+    .json(new ApiResponse(200,  "Login OTP sent successfully"));
 });
 
 // Login with OTP
@@ -264,7 +267,7 @@ const loginWithOTP = asynchandler(async (req, res) => {
     await generateAccessTokenAndRefreshToken(user._id);
 
   const loggedInUser = await User.findById(user._id).select(
-    "-password -refresh_token -emailOtp -loginOtp"
+    "-password -refresh_token -otp -loginOtp"
   );
 
   const options = {
@@ -306,7 +309,7 @@ const logoutUser = asynchandler(async (req, res) => {
     .status(200)
     .clearCookie("refreshToken", options)
     .clearCookie("accessToken", options)
-    .json(new ApiResponse(200, null, "User logged out successfully"));
+    .json(new ApiResponse(200,  "User logged out successfully"));
 });
 
 // Get Current User
