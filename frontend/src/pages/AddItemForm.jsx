@@ -86,7 +86,7 @@ export default function AddItemForm() {
   };
 
   const handleArrow = () => {
-    navigate(-1); // Navigate back to the previous page
+    navigate(-1)
   }
 
   return (
@@ -97,7 +97,7 @@ export default function AddItemForm() {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-4">
               <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
-                <ArrowLeft  className="h-5 w-5 text-gray-600" />
+                <ArrowLeft onClick={handleArrow}  className="h-5 w-5 text-gray-600" />
               </button>
               <h1 className="text-2xl font-bold bg-gradient-to-br from-gray-300 via-gray-800 to-black bg-clip-text text-transparent">
                 ReWear
@@ -128,7 +128,7 @@ export default function AddItemForm() {
             <div className="space-y-6">
               <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
                 <h3 className="text-xl font-semibold mb-4 flex items-center">
-                  <Camera className="h-5 w-5 mr-2 text-emerald-600" />
+                  <Camera className="h-5 w-5 mr-2 text-black-600" />
                   Photos ({images.length}/6)
                 </h3>
                 

@@ -1,14 +1,13 @@
 import * as React from 'react';
 import CssBaseline from '@mui/material/CssBaseline';
 import Stack from '@mui/material/Stack';
-import AppTheme from '../shared-theme/AppTheme.jsx';
 import ColorModeSelect from '../shared-theme/ColorModeSelect.jsx';
 import SignInCard from './components/SignInCard.jsx';
 import Content from './components/Content.jsx';
 
-export default function Authentication(props) {
+export default function Authentication({ onLogin }) {
   return (
-    <AppTheme {...props}>
+    <>
       <CssBaseline enableColorScheme />
       <ColorModeSelect sx={{ position: 'fixed', top: '1rem', right: '1rem' }} />
       <Stack
@@ -62,10 +61,10 @@ export default function Authentication(props) {
             }}
           >
             <Content />
-            <SignInCard />
+            <SignInCard onLogin={onLogin} />
           </Stack>
         </Stack>
       </Stack>
-    </AppTheme>
+    </>
   );
 }
