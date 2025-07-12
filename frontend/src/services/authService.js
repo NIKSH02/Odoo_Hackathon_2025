@@ -86,6 +86,20 @@ class AuthService {
       method: 'POST',
     });
   }
+
+  // Profile Methods
+  static async updateProfile(profileData) {
+    return this.makeRequest(API_ENDPOINTS.AUTH.UPDATE_PROFILE, {
+      method: 'PUT',
+      data: profileData,
+    });
+  }
+
+  static async getProfileStatus() {
+    return this.makeRequest(API_ENDPOINTS.AUTH.PROFILE_STATUS, {
+      method: 'GET',
+    });
+  }
 }
 
 export default AuthService;

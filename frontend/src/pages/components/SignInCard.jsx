@@ -2,808 +2,584 @@ import * as React from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import MuiCard from '@mui/material/Card';
-import Checkbox from '@mui/material/Checkbox';
 import Divider from '@mui/material/Divider';
 import FormLabel from '@mui/material/FormLabel';
 import FormControl from '@mui/material/FormControl';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import Link from '@mui/material/Link';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import Alert from '@mui/material/Alert';
 import Snackbar from '@mui/material/Snackbar';
 import CircularProgress from '@mui/material/CircularProgress';
 import { styled } from '@mui/material/styles';
-import { GoogleIcon, FacebookIcon, SitemarkIcon } from './CustomIcons';
-import { useAuth } from '../../hooks/useAuth';
+import AuthService from '../../services/authService';
 
 const Card = styled(MuiCard)(({ theme }) => ({
   display: 'flex',
   flexDirection: 'column',
   alignSelf: 'center',
   width: '100%',
-  padding: theme.spacing(2),
-  margin: theme.spacing(1),
-  gap: theme.spacing(1.5),
-  boxShadow:
-    'hsla(220, 30%, 5%, 0.05) 0px 5px 15px 0px, hsla(220, 25%, 10%, 0.05) 0px 15px 35px -5px',
+  padding: theme.spacing(4),
+  gap: theme.spacing(2),
+  margin: 'auto',
+  border: '1px solid #000',
+  borderRadius: theme.spacing(1),
+  boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.1)',
   [theme.breakpoints.up('sm')]: {
     width: '450px',
-    padding: theme.spacing(4),
-    margin: theme.spacing(8),
-    gap: theme.spacing(2),
-  },
-  [theme.breakpoints.down('sm')]: {
-    margin: theme.spacing(0.5),
-    padding: theme.spacing(2),
-    minHeight: 'auto',
-    maxWidth: '100%',
-    borderRadius: theme.spacing(1),
   },
   ...theme.applyStyles('dark', {
-    boxShadow:
-      'hsla(220, 30%, 5%, 0.5) 0px 5px 15px 0px, hsla(220, 25%, 10%, 0.08) 0px 15px 35px -5px',
+    border: '1px solid #333',
+    backgroundColor: theme.palette.background.paper,
   }),
 }));
 
-export default function SignInCard() {
+const BlackButton = styled(Button)(() => ({
+  backgroundColor: '#000',
+  color: '#fff',
+  border: '1px solid #000',
+  '&:hover': {
+    backgroundColor: '#333',
+    borderColor: '#333',
+  },
+  '&:disabled': {
+    backgroundColor: '#666',
+    color: '#ccc',
+  },
+}));
+
+const BlackOutlinedButton = styled(Button)(() => ({
+  color: '#000',
+  border: '1px solid #000',
+  '&:hover': {
+    backgroundColor: 'rgba(0, 0, 0, 0.04)',
+    borderColor: '#000',
+  },
+}));
+
+export default function SignInCard({ onLogin }) {
+  // Form state management
+  const [isSignUp, setIsSignUp] = React.useState(false);
+  const [showEmailVerification, setShowEmailVerification] = React.useState(false);
+  const [showVerifyEmailOnly, setShowVerifyEmailOnly] = React.useState(false);
+  
+  // Form data
+  const [formData, setFormData] = React.useState({
+    email: '',
+    username: '',
+    password: '',
+    otp: ''
+  });
+
+  // UI state
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [error, setError] = React.useState('');
+  const [success, setSuccess] = React.useState('');
+  const [showSnackbar, setShowSnackbar] = React.useState(false);
+
+  // Validation state
   const [emailError, setEmailError] = React.useState(false);
-  const [emailErrorMessage, setEmailErrorMessage] = React.useState('');
   const [passwordError, setPasswordError] = React.useState(false);
-  const [passwordErrorMessage, setPasswordErrorMessage] = React.useState('');
-  const [openSnackbar, setOpenSnackbar] = React.useState(false);
+  const [usernameError, setUsernameError] = React.useState(false);
 
-  const [message, setMessage] = React.useState();
-  const [username, setUsernaem] = React.useState('');
-  const [password, setPassword] = React.useState('');
-  const [name, setName] = React.useState('');
-  const [email, setEmail] = React.useState('');
-  const [loginEmail, setLoginEmail] = React.useState(''); // Separate email for login OTP
-  const [otp, setOtp] = React.useState('');
-
-  // OTP related states
-  const [otpSent, setOtpSent] = React.useState(false);
-  const [otpVerified, setOtpVerified] = React.useState(false);
-  const [countdown, setCountdown] = React.useState(0);
-  const [isResendDisabled, setIsResendDisabled] = React.useState(false);
-
-  const [formState, setFormState] = React.useState(0); // 0 for signin and 1 for signup
-  const [loginMethod, setLoginMethod] = React.useState('password'); // 'password' or 'otp'
-
-  // Auth hook for backend integration
-  const {
-    loading,
-    error,
-    clearError,
-    register,
-    verifyEmail,
-    resendEmailOTP,
-    login,
-    sendLoginOTP,
-    loginWithOTP,
-  } = useAuth();
-
-  // Countdown timer effect
-  React.useEffect(() => {
-    let timer;
-    if (countdown > 0) {
-      timer = setTimeout(() => setCountdown(countdown - 1), 1000);
-    } else if (countdown === 0 && isResendDisabled) {
-      setIsResendDisabled(false);
-    }
-    return () => clearTimeout(timer);
-  }, [countdown, isResendDisabled]);
-
-  // Handle OTP sending for signin (email-based)
-  const handleSendLoginOtp = async () => {
-    if (!loginEmail.trim()) {
-      setEmailError(true);
-      setEmailErrorMessage('Please enter a valid email address.');
-      return;
-    }
+  // Handle input changes
+  const handleInputChange = (field) => (event) => {
+    const value = event.target.value;
+    setFormData(prev => ({ ...prev, [field]: value }));
     
-    // Email validation
+    // Clear validation errors on input
+    if (field === 'email') setEmailError(false);
+    if (field === 'password') setPasswordError(false);
+    if (field === 'username') setUsernameError(false);
+    setError('');
+  };
+
+  // Validation functions
+  const validateEmail = (email) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(loginEmail)) {
-      setEmailError(true);
-      setEmailErrorMessage('Please enter a valid email address.');
-      return;
-    }
-
-    setEmailError(false);
-    setEmailErrorMessage('');
-    
-    try {
-      await sendLoginOTP(loginEmail);
-      setOtpSent(true);
-      setCountdown(60);
-      setIsResendDisabled(true);
-      setMessage('OTP sent to your email!');
-      setOpenSnackbar(true);
-    } catch (error) {
-      setEmailError(true);
-      setEmailErrorMessage(error.message || 'Failed to send OTP');
-    }
+    return emailRegex.test(email);
   };
 
-  // Handle resend OTP for signin
-  const handleResendLoginOtp = () => {
-    if (!isResendDisabled) {
-      handleSendLoginOtp();
-    }
-  };
+  const validateForm = () => {
+    let hasErrors = false;
 
-  // Handle initial signup with OTP (creates user and sends OTP)
-  const handleInitialSignupWithOTP = async () => {
-    // Validate all required fields for registration
-    if (!name.trim()) {
+    if (!formData.email || !validateEmail(formData.email)) {
       setEmailError(true);
-      setEmailErrorMessage('Please enter your full name.');
-      return;
+      hasErrors = true;
     }
-    
-    if (!username.trim()) {
-      setEmailError(true);
-      setEmailErrorMessage('Please enter a valid username.');
-      return;
-    }
-    
-    if (!password || password.length < 6) {
+
+    if (!showEmailVerification && !showVerifyEmailOnly && (!formData.password || formData.password.length < 6)) {
       setPasswordError(true);
-      setPasswordErrorMessage('Password must be at least 6 characters long.');
-      return;
+      hasErrors = true;
     }
-    
-    if (!email.trim()) {
-      setEmailError(true);
-      setEmailErrorMessage('Please enter a valid email address.');
-      return;
+
+    if (isSignUp && (!formData.username || formData.username.length < 3)) {
+      setUsernameError(true);
+      hasErrors = true;
     }
-    
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      setEmailError(true);
-      setEmailErrorMessage('Please enter a valid email address.');
+
+    return !hasErrors;
+  };
+
+  // Handle sign in
+  const handleSignIn = async () => {
+    if (!validateForm()) {
+      setError('Please fix the validation errors');
       return;
     }
 
-    setEmailError(false);
-    setEmailErrorMessage('');
-    setPasswordError(false);
-    setPasswordErrorMessage('');
-    
+    setIsLoading(true);
+    setError('');
+
     try {
-      // Register user which automatically sends OTP
-      await register({ 
-        name, 
-        username, 
-        password, 
-        email 
+      const response = await AuthService.login({
+        email: formData.email,
+        password: formData.password
       });
-      setOtpSent(true);
-      setCountdown(60);
-      setIsResendDisabled(true);
-      setMessage('Registration successful! OTP sent to your email.');
-      setOpenSnackbar(true);
+
+      if (response.success) {
+        setSuccess('Login successful!');
+        setShowSnackbar(true);
+        
+        // Handle different response structures
+        const responseData = response.data || response.message;
+        if (responseData && responseData.accessToken) {
+          localStorage.setItem('accessToken', responseData.accessToken);
+        }
+        
+        // Call parent login handler
+        if (onLogin) {
+          onLogin(responseData?.user || responseData);
+        }
+      }
     } catch (error) {
-      setEmailError(true);
-      setEmailErrorMessage(error.message || 'Failed to register user');
+      setError(error.message || 'Login failed');
+      setShowSnackbar(true);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Handle sign up
+  const handleSignUp = async () => {
+    if (!validateForm()) {
+      setError('Please fix the validation errors');
+      return;
+    }
+
+    setIsLoading(true);
+    setError('');
+
+    try {
+      const response = await AuthService.register({
+        username: formData.username,
+        email: formData.email,
+        password: formData.password
+      });
+
+      if (response.success) {
+        setSuccess('Registration successful! Please check your email for verification.');
+        setShowSnackbar(true);
+        setShowEmailVerification(true);
+      }
+    } catch (error) {
+      setError(error.message || 'Registration failed');
+      setShowSnackbar(true);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   // Handle OTP verification
-  const handleVerifyOtp = async () => {
-    if (!otp.trim() || otp.length !== 6) {
-      setMessage('Please enter a valid 6-digit OTP');
-      setOpenSnackbar(true);
+  const handleVerifyEmail = async () => {
+    if (!formData.otp || formData.otp.length !== 6) {
+      setError('Please enter a valid 6-digit OTP');
       return;
     }
 
+    setIsLoading(true);
+    setError('');
+
     try {
-      if (formState === 1) {
-        // Signup email verification
-        await verifyEmail(email, otp);
-        setOtpVerified(true);
-        setMessage('Email verified successfully!');
-        setOpenSnackbar(true);
-      } else if (formState === 0 && loginMethod === 'otp') {
-        // Login with OTP
-        await loginWithOTP(loginEmail, otp);
-        setOtpVerified(true);
-        setMessage('Login successful!');
-        setOpenSnackbar(true);
+      const response = await AuthService.verifyEmail(formData.email, formData.otp);
+      
+      if (response.success) {
+        setSuccess('Email verified successfully! You can now sign in.');
+        setShowSnackbar(true);
+        setShowEmailVerification(false);
+        setShowVerifyEmailOnly(false);
+        setIsSignUp(false);
+        setFormData(prev => ({ ...prev, otp: '' }));
       }
     } catch (error) {
-      setMessage(error.message || 'Invalid OTP. Please try again.');
-      setOpenSnackbar(true);
+      setError(error.message || 'Email verification failed');
+      setShowSnackbar(true);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Handle resend OTP for signup
-  const handleResendOtp = async () => {
-    if (!isResendDisabled && email.trim()) {
-      try {
-        await resendEmailOTP(email);
-        setCountdown(60);
-        setIsResendDisabled(true);
-        setMessage('OTP sent successfully!');
-        setOpenSnackbar(true);
-      } catch (error) {
-        setEmailError(true);
-        setEmailErrorMessage(error.message || 'Failed to resend OTP');
+  // Handle resend OTP - for verify email only option
+  const handleSendVerificationOTP = async () => {
+    if (!formData.email || !validateEmail(formData.email)) {
+      setError('Please enter a valid email address first');
+      return;
+    }
+
+    setIsLoading(true);
+    setError('');
+
+    try {
+      const response = await AuthService.resendEmailOTP(formData.email);
+      
+      if (response.success) {
+        setSuccess('Verification code sent to your email');
+        setShowSnackbar(true);
+        setShowEmailVerification(true);
+        setShowVerifyEmailOnly(false);
       }
+    } catch (error) {
+      setError(error.message || 'Failed to send verification code');
+      setShowSnackbar(true);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  let handleAuth = async () => {
-    let isValid = true;
-    clearError(); // Clear any previous errors
-
-    // Validation for signin
-    if (formState === 0) {
-      if (loginMethod === 'password') {
-        // For password login, check username and password
-        if (!username.trim()) {
-          setEmailError(true);
-          setEmailErrorMessage('Please enter a valid username or email.');
-          isValid = false;
-        } else {
-          setEmailError(false);
-          setEmailErrorMessage('');
-        }
-        
-        if (!password || password.length < 6) {
-          setPasswordError(true);
-          setPasswordErrorMessage('Password must be at least 6 characters long.');
-          isValid = false;
-        } else {
-          setPasswordError(false);
-          setPasswordErrorMessage('');
-        }
-      } else if (loginMethod === 'otp') {
-        // For OTP login, check email and OTP verification
-        if (!loginEmail.trim()) {
-          setEmailError(true);
-          setEmailErrorMessage('Please enter a valid email address.');
-          isValid = false;
-        } else {
-          setEmailError(false);
-          setEmailErrorMessage('');
-        }
-        
-        if (!otpVerified) {
-          setMessage('Please verify your email with OTP first.');
-          setOpenSnackbar(true);
-          isValid = false;
-        }
-      }
-    }
-
-    // Validation for signup
-    if (formState === 1) {
-      if (!name.trim()) {
-        setEmailError(true);
-        setEmailErrorMessage('Please enter your full name.');
-        isValid = false;
-      }
-      
-      if (!username.trim()) {
-        setEmailError(true);
-        setEmailErrorMessage('Please enter a valid username.');
-        isValid = false;
-      } else {
-        setEmailError(false);
-        setEmailErrorMessage('');
-      }
-      
-      if (!password || password.length < 6) {
-        setPasswordError(true);
-        setPasswordErrorMessage('Password must be at least 6 characters long.');
-        isValid = false;
-      } else {
-        setPasswordError(false);
-        setPasswordErrorMessage('');
-      }
-      
-      if (!otpVerified) {
-        setMessage('Please verify your email address first.');
-        setOpenSnackbar(true);
-        isValid = false;
-      }
-    }
-
-    if (!isValid) return;
+  // Handle resend OTP - for existing verification flow
+  const handleResendOTP = async () => {
+    setIsLoading(true);
+    setError('');
 
     try {
-      if (formState === 0) {
-        // Login
-        if (loginMethod === 'password') {
-          await login({ email: username, password });
-          setMessage('Login successful!');
-          setOpenSnackbar(true);
-        }
-        // OTP login is already handled in handleVerifyOtp
-      } else if (formState === 1) {
-        // For signup, user should already be registered when they verified email
-        // Just show success message and switch to signin
-        setMessage('Registration completed successfully! You can now sign in.');
-        setOpenSnackbar(true);
-        
-        // Reset form and switch to signin
-        setFormState(0);
-        setPassword('');
-        setName('');
-        setUsernaem('');
-        setEmail('');
-        // Reset OTP states
-        setOtpSent(false);
-        setOtpVerified(false);
-        setOtp('');
-        setLoginMethod('password');
+      const response = await AuthService.resendEmailOTP(formData.email);
+      
+      if (response.success) {
+        setSuccess('Verification code resent to your email');
+        setShowSnackbar(true);
       }
     } catch (error) {
-      setMessage(error.message || 'An error occurred');
-      setOpenSnackbar(true);
-      console.error('Authentication error:', error);
+      setError(error.message || 'Failed to resend verification code');
+      setShowSnackbar(true);
+    } finally {
+      setIsLoading(false);
     }
-  }
-  
+  };
+
+  // Handle form submission
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    
+    if (showEmailVerification) {
+      handleVerifyEmail();
+    } else if (showVerifyEmailOnly) {
+      handleSendVerificationOTP();
+    } else if (isSignUp) {
+      handleSignUp();
+    } else {
+      handleSignIn();
+    }
+  };
 
   const handleSnackClose = () => {
-    setOpenSnackbar(false);
-  }
+    setShowSnackbar(false);
+    setError('');
+    setSuccess('');
+  };
 
-  // const handleSubmit = (event) => {
-  //   if (emailError || passwordError) {
-  //     event.preventDefault();
-  //     return;
-  //   }
-  //   const data = new FormData(event.currentTarget);
-  //   console.log({
-  //     email: data.get('email'),
-  //     password: data.get('password'),
-  //   });
-  // };
+  const getTitle = () => {
+    if (showEmailVerification) return 'Verify Email';
+    if (showVerifyEmailOnly) return 'Verify Email';
+    if (isSignUp) return 'Sign up';
+    return 'Sign in';
+  };
+
+  const getButtonText = () => {
+    if (showEmailVerification) return 'Verify Email';
+    if (showVerifyEmailOnly) return 'Send Verification Code';
+    if (isSignUp) return 'Sign up';
+    return 'Sign in';
+  };
 
   return (
     <Card variant="outlined">
-      <Box sx={{ display: { xs: 'flex', md: 'none' } }}>
-      </Box>
       <Typography
         component="h1"
         variant="h4"
         sx={{ 
           width: '100%', 
-          fontSize: { xs: 'clamp(1.5rem, 8vw, 2rem)', sm: 'clamp(2rem, 10vw, 2.15rem)' },
-          textAlign: 'center',
-          mb: { xs: 1, sm: 0 }
+          fontSize: 'clamp(2rem, 10vw, 2.15rem)',
+          color: '#000',
+          fontWeight: 'bold'
         }}
       >
-        {formState === 0 ? 'Sign in' : 'Sign up'} 
+        {getTitle()}
       </Typography>
       
-      {/* Login Method Toggle - Only show for signin */}
-      {formState === 0 && (
-        <Box sx={{ textAlign: 'center', mb: { xs: 1, sm: 2 } }}>
-        
-          <Box sx={{ 
-            display: 'flex', 
-            gap: 1, 
-            justifyContent: 'center',
-            flexDirection: { xs: 'column', sm: 'row' },
-            width: { xs: '100%', sm: 'auto' }
-          }}>
-            <Button
-              variant={loginMethod === 'password' ? 'contained' : 'outlined'}
-              onClick={() => {
-                setLoginMethod('password');
-                setOtpSent(false);
-                setOtpVerified(false);
-                setOtp('');
-                setLoginEmail('');
-                clearError();
-                setEmailError(false);
-                setEmailErrorMessage('');
-              }}
-              size="small"
-              sx={{ 
-                minHeight: { xs: '44px', sm: 'auto' },
-                fontSize: { xs: '0.875rem', sm: '0.8125rem' }
-              }}
-            >
-              Password
-            </Button>
-            <Button
-              variant={loginMethod === 'otp' ? 'contained' : 'outlined'}
-              onClick={() => {
-                setLoginMethod('otp');
-                setPassword('');
-                setPasswordError(false);
-                setPasswordErrorMessage('');
-                clearError();
-              }}
-              size="small"
-              sx={{ 
-                minHeight: { xs: '44px', sm: 'auto' },
-                fontSize: { xs: '0.875rem', sm: '0.8125rem' }
-              }}
-            >
-              OTP
-            </Button>
-          </Box>
-        </Box>
-      )}
-      
       <Box
-        //component="form"
-
-        //noValidate
-        sx={{ 
-          display: 'flex', 
-          flexDirection: 'column', 
-          width: '100%', 
-          gap: { xs: 1.5, sm: 2 }
-        }}
+        component="form"
+        onSubmit={handleSubmit}
+        noValidate
+        sx={{ display: 'flex', flexDirection: 'column', width: '100%', gap: 2 }}
       >
-        {formState == 1 && <FormControl>
-          <FormLabel htmlFor="name">Full Name</FormLabel>
-          <TextField
-            error={emailError}
-            helperText={emailErrorMessage}
-            id="name"
-            type="name"
-            name="name"
-            placeholder="John Doe"
-            autoComplete="name"
-            autoFocus
-            required
-            fullWidth
-            variant="outlined"
-            onChange={(e) => setName(e.target.value)}
-            color={emailError ? 'error' : 'primary'}
-          />
-        </FormControl> }
-        
-        {/* Username field - only show for signup OR signin with password */}
-        {(formState === 1 || (formState === 0 && loginMethod === 'password')) && (
-          <FormControl>
-            <FormLabel htmlFor="username">Username</FormLabel>
-            <TextField
-              error={emailError}
-              helperText={emailErrorMessage}
-              id="username"
-              type="username"
-              name="username"
-              value={username}
-              placeholder="@john_doe"
-              autoComplete="username"
-              autoFocus
-              required
-              fullWidth
-              variant="outlined"
-              color={emailError ? 'error' : 'primary'}
-              onChange={(e) => setUsernaem(e.target.value)}
-            />
-          </FormControl>
-        )}
-        
-        {/* Email field for login with OTP */}
-        {formState === 0 && loginMethod === 'otp' && (
-          <FormControl>
-            <FormLabel htmlFor="login-email">Email Address</FormLabel>
-            <Box sx={{ 
-              display: 'flex', 
-              gap: 1, 
-              alignItems: 'flex-start',
-              flexDirection: { xs: 'column', sm: 'row' }
-            }}>
+        {!showEmailVerification ? (
+          <>
+            <FormControl>
+              <FormLabel htmlFor="email" sx={{ color: '#000', fontWeight: 'medium' }}>
+                Email
+              </FormLabel>
               <TextField
                 error={emailError}
-                helperText={emailErrorMessage}
-                id="login-email"
+                helperText={emailError ? 'Please enter a valid email address' : ''}
+                id="email"
                 type="email"
-                name="login-email"
-                value={loginEmail}
-                placeholder="john@example.com"
+                name="email"
+                placeholder="your@email.com"
                 autoComplete="email"
+                autoFocus
                 required
                 fullWidth
                 variant="outlined"
-                onChange={(e) => setLoginEmail(e.target.value)}
-                color={emailError ? 'error' : 'primary'}
-                disabled={otpVerified}
-                sx={{ mb: { xs: 1, sm: 0 } }}
+                value={formData.email}
+                onChange={handleInputChange('email')}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    '& fieldset': {
+                      borderColor: '#000',
+                    },
+                    '&:hover fieldset': {
+                      borderColor: '#000',
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#000',
+                    },
+                  },
+                }}
               />
-              {loginEmail.trim() && (
-                otpVerified ? (
-                  <Button
-                    variant="contained"
-                    color="success"
-                    sx={{ 
-                      minWidth: { xs: '100%', sm: '80px' }, 
-                      height: '40px', 
-                      fontSize: '0.75rem',
-                      minHeight: '44px'
-                    }}
-                    disabled
-                  >
-                    ✓ Verified
-                  </Button>
-                ) : (
-                  <Button
-                    variant="outlined"
-                    onClick={otpSent ? handleResendLoginOtp : handleSendLoginOtp}
-                    disabled={isResendDisabled}
-                    sx={{ 
-                      minWidth: { xs: '100%', sm: '80px' }, 
-                      height: '40px', 
-                      fontSize: { xs: '0.75rem', sm: '0.55rem' },
-                      backgroundColor: '#000',
-                      color: '#fff',
-                      border: '1px solid #000',
-                      minHeight: '44px',
-                      '&:hover': {
-                        backgroundColor: '#333',
-                        border: '1px solid #333'
-                      },
-                      '&:disabled': {
-                        backgroundColor: '#666',
-                        color: '#fff',
-                        border: '1px solid #666'
-                      }
-                    }}
-                  >
-                    {otpSent ? (
-                      isResendDisabled ? `Resend (${countdown}s)` : 'Resend OTP'
-                    ) : (
-                      'Send OTP'
-                    )}
-                  </Button>
-                )
-              )}
-            </Box>
-          </FormControl>
-        )}
-        
-        {/* OTP input for signin */}
-        {formState === 0 && loginMethod === 'otp' && otpSent && !otpVerified && (
-          <FormControl>
-            <FormLabel htmlFor="login-otp">Enter OTP</FormLabel>
-            <Box sx={{ 
-              display: 'flex', 
-              gap: 1, 
-              alignItems: 'flex-start',
-              flexDirection: { xs: 'column', sm: 'row' }
-            }}>
-              <TextField
-                id="login-otp"
-                type="text"
-                name="login-otp"
-                value={otp}
-                placeholder="Enter 6-digit OTP"
-                required
-                fullWidth
-                variant="outlined"
-                onChange={(e) => setOtp(e.target.value)}
-                inputProps={{ maxLength: 6, pattern: '[0-9]*' }}
-                sx={{ mb: { xs: 1, sm: 0 } }}
-              />
-              
-            </Box>
-            <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
-              Development mode: Check the backend console/terminal for your OTP
-            </Typography>
-          </FormControl>
-        )}
-        
-        {formState == 1 && <FormControl>
-          <FormLabel htmlFor="email">Email Address</FormLabel>
-          <Box sx={{ 
-            display: 'flex', 
-            gap: 1, 
-            alignItems: 'flex-start',
-            flexDirection: { xs: 'column', sm: 'row' }
-          }}>
-            <TextField
-              error={emailError}
-              helperText={emailErrorMessage}
-              id="email"
-              type="email"
-              name="email"
-              value={email}
-              placeholder="john@example.com"
-              autoComplete="email"
-              required
-              fullWidth
-              variant="outlined"
-              onChange={(e) => setEmail(e.target.value)}
-              color={emailError ? 'error' : 'primary'}
-              disabled={otpVerified}
-              sx={{ mb: { xs: 1, sm: 0 } }}
-            />
-          </Box>
-        </FormControl> }
+            </FormControl>
 
-        {formState == 1 && otpSent && !otpVerified && <FormControl>
-          <FormLabel htmlFor="otp">Enter OTP</FormLabel>
-          <Box sx={{ 
-            display: 'flex', 
-            gap: 1, 
-            alignItems: 'flex-start',
-            flexDirection: { xs: 'column', sm: 'row' }
-          }}>
+            {isSignUp && !showVerifyEmailOnly && (
+              <FormControl>
+                <FormLabel htmlFor="username" sx={{ color: '#000', fontWeight: 'medium' }}>
+                  Username
+                </FormLabel>
+                <TextField
+                  error={usernameError}
+                  helperText={usernameError ? 'Username must be at least 3 characters' : ''}
+                  id="username"
+                  type="text"
+                  name="username"
+                  placeholder="username"
+                  autoComplete="username"
+                  required
+                  fullWidth
+                  variant="outlined"
+                  value={formData.username}
+                  onChange={handleInputChange('username')}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      '& fieldset': {
+                        borderColor: '#000',
+                      },
+                      '&:hover fieldset': {
+                        borderColor: '#000',
+                      },
+                      '&.Mui-focused fieldset': {
+                        borderColor: '#000',
+                      },
+                    },
+                  }}
+                />
+              </FormControl>
+            )}
+
+            {!showVerifyEmailOnly && (
+              <FormControl>
+                <FormLabel htmlFor="password" sx={{ color: '#000', fontWeight: 'medium' }}>
+                  Password
+                </FormLabel>
+                <TextField
+                  error={passwordError}
+                  helperText={passwordError ? 'Password must be at least 6 characters' : ''}
+                  name="password"
+                  placeholder="••••••"
+                  type="password"
+                  id="password"
+                  autoComplete="current-password"
+                  required
+                  fullWidth
+                  variant="outlined"
+                  value={formData.password}
+                  onChange={handleInputChange('password')}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      '& fieldset': {
+                        borderColor: '#000',
+                      },
+                      '&:hover fieldset': {
+                        borderColor: '#000',
+                      },
+                      '&.Mui-focused fieldset': {
+                        borderColor: '#000',
+                      },
+                    },
+                  }}
+                />
+              </FormControl>
+            )}
+          </>
+        ) : (
+          <FormControl>
+            <FormLabel htmlFor="otp" sx={{ color: '#000', fontWeight: 'medium' }}>
+              Verification Code
+            </FormLabel>
             <TextField
               id="otp"
               type="text"
               name="otp"
-              value={otp}
-              placeholder="Enter 6-digit OTP"
+              placeholder="Enter 6-digit code"
               required
               fullWidth
               variant="outlined"
-              onChange={(e) => setOtp(e.target.value)}
-              inputProps={{ maxLength: 6, pattern: '[0-9]*' }}
-              sx={{ mb: { xs: 1, sm: 0 } }}
-            />
-            <Button
-              variant="contained"
-              onClick={handleVerifyOtp}
-              sx={{ 
-                minWidth: { xs: '100%', sm: '70px' }, 
-                height: '40px', 
-                fontSize: { xs: '0.875rem', sm: '0.65rem' },
-                backgroundColor: '#000',
-                color: '#fff',
-                minHeight: '44px',
-                '&:hover': {
-                  backgroundColor: '#333'
-                }
+              value={formData.otp}
+              onChange={handleInputChange('otp')}
+              inputProps={{ maxLength: 6 }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  '& fieldset': {
+                    borderColor: '#000',
+                  },
+                  '&:hover fieldset': {
+                    borderColor: '#000',
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: '#000',
+                  },
+                },
               }}
-            >
-              Verify
-            </Button>
-          </Box>
-          <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
-            Development mode: Check the backend console/terminal for your OTP
-          </Typography>
-        </FormControl> }
-        
-        {/* Password field - show for signup OR signin with password */}
-        {(formState === 1 || (formState === 0 && loginMethod === 'password')) && (
-          <FormControl>
-            <FormLabel htmlFor="password">Password</FormLabel>
-            <TextField
-              error={passwordError}
-              helperText={passwordErrorMessage}
-              name="password"
-              placeholder="••••••"
-              type="password"
-              id="password"
-              value={password}
-              autoComplete="current-password"
-              autoFocus
-              required
-              fullWidth
-              variant="outlined"
-              onChange={(e) => setPassword(e.target.value)}
-              color={passwordError ? 'error' : 'primary'}
             />
+            <Typography variant="body2" sx={{ mt: 1, color: '#666' }}>
+              Enter the verification code sent to {formData.email}
+            </Typography>
           </FormControl>
         )}
-    
-        <p style={{color: "rgb(128 29 20)", margin: "8px 0", fontSize: "14px"}}>{error}</p>
-        
-        {/* Error display */}
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        )}
-        
-        {formState == 0 ? 
-          <Button 
-            type="button" 
-            fullWidth 
-            variant="contained" 
-            onClick={handleAuth}
-            disabled={loading}
-            sx={{ 
-              minHeight: { xs: '48px', sm: '42px' },
-              fontSize: { xs: '1rem', sm: '0.875rem' },
-              mt: { xs: 1, sm: 0 }
-            }}
+
+        <BlackButton
+          type="submit"
+          fullWidth
+          variant="contained"
+          disabled={isLoading}
+          sx={{ mt: 2 }}
+        >
+          {isLoading ? (
+            <CircularProgress size={24} sx={{ color: '#fff' }} />
+          ) : (
+            getButtonText()
+          )}
+        </BlackButton>
+
+        {showEmailVerification && (
+          <BlackOutlinedButton
+            onClick={handleResendOTP}
+            disabled={isLoading}
+            sx={{ mt: 1 }}
           >
-            {loading ? <CircularProgress size={24} color="inherit" /> : 'Sign in'}
-          </Button> 
-        :
-         <Button 
-           type="button" 
-           fullWidth 
-           variant="contained" 
-           onClick={handleAuth}
-           disabled={loading}
-           sx={{ 
-             minHeight: { xs: '48px', sm: '42px' },
-             fontSize: { xs: '1rem', sm: '0.875rem' },
-             mt: { xs: 1, sm: 0 }
-           }}
-         >
-            {loading ? <CircularProgress size={24} color="inherit" /> : 'Sign up'}
-          </Button> }
-        
-    
-        
-        <Typography sx={{ 
-          textAlign: 'center',
-          fontSize: { xs: '0.875rem', sm: '0.875rem' },
-          mt: { xs: 1, sm: 0 }
-        }}>
-          {formState == 0 ? `Don't` : "Already"} have an account?{' '}
-          <span>
-            <Link
-              href="/material-ui/getting-started/templates/sign-in/"
-              variant="body2"
-              sx={{ 
-                alignSelf: 'center',
-                fontSize: { xs: '0.875rem', sm: '0.875rem' },
-                touchAction: 'manipulation',
-                minHeight: { xs: '44px', sm: 'auto' },
-                display: 'inline-flex',
-                alignItems: 'center'
-              }}
-              onClick={(e) => {
-                e.preventDefault();
-                // Reset all states when switching between signin/signup
-                setOtpSent(false);
-                setOtpVerified(false);
-                setOtp('');
-                setEmail('');
-                setLoginEmail('');
-                setPassword('');
-                clearError();
-                setEmailError(false);
-                setEmailErrorMessage('');
-                setPasswordError(false);
-                setPasswordErrorMessage('');
-                setLoginMethod('password'); // Reset to password method
-                setFormState((prev) => (prev === 0 ? 1 : 0));
+            Resend Verification Code
+          </BlackOutlinedButton>
+        )}
+      </Box>
+
+      {!showEmailVerification && (
+        <>
+          <Divider sx={{ my: 2 }}>or</Divider>
+          
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <BlackOutlinedButton
+              fullWidth
+              onClick={() => {
+                setShowVerifyEmailOnly(true);
+                setIsSignUp(false);
+                setFormData({ email: '', username: '', password: '', otp: '' });
+                setError('');
               }}
             >
-              {formState == 0 ?  "Sign up" : "Sign In"}
-            </Link>
-          </span>
-        </Typography>
-      </Box>
-      <Divider></Divider>
-      {/* <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-        <Button
-          fullWidth
-          variant="outlined"
-          onClick={() => alert('Sign in with Google')}
-          startIcon={<GoogleIcon />}
-        >
-          Sign in with Google
-        </Button>
-        <Button
-          fullWidth
-          variant="outlined"
-          onClick={() => alert('Sign in with Facebook')}
-          startIcon={<FacebookIcon />}
-        >
-          Sign in with Facebook
-        </Button>
-      </Box> */}
+              Verify Email
+            </BlackOutlinedButton>
+          </Box>
 
-      <Snackbar />
-      {error && (
-        <Snackbar
-          open={openSnackbar}
-          autoHideDuration={4000}
-          onClose={handleSnackClose}
-          message={message || error}
-        />
+          <Typography sx={{ textAlign: 'center', mt: 2 }}>
+            {showVerifyEmailOnly ? (
+              <>
+                Want to sign in instead?{' '}
+                <Button 
+                  variant="text" 
+                  sx={{ color: '#000', textDecoration: 'underline' }}
+                  onClick={() => {
+                    setShowVerifyEmailOnly(false);
+                    setIsSignUp(false);
+                    setFormData({ email: '', username: '', password: '', otp: '' });
+                    setError('');
+                  }}
+                >
+                  Sign in
+                </Button>
+              </>
+            ) : isSignUp ? (
+              <>
+                Already have an account?{' '}
+                <Button 
+                  variant="text" 
+                  sx={{ color: '#000', textDecoration: 'underline' }}
+                  onClick={() => {
+                    setIsSignUp(false);
+                    setShowVerifyEmailOnly(false);
+                    setFormData({ email: '', username: '', password: '', otp: '' });
+                    setError('');
+                  }}
+                >
+                  Sign in
+                </Button>
+              </>
+            ) : (
+              <>
+                Don&apos;t have an account?{' '}
+                <Button 
+                  variant="text" 
+                  sx={{ color: '#000', textDecoration: 'underline' }}
+                  onClick={() => {
+                    setIsSignUp(true);
+                    setShowVerifyEmailOnly(false);
+                    setFormData({ email: '', username: '', password: '', otp: '' });
+                    setError('');
+                  }}
+                >
+                  Sign up
+                </Button>
+              </>
+            )}
+          </Typography>
+        </>
       )}
+
+      <Snackbar
+        open={showSnackbar}
+        autoHideDuration={6000}
+        onClose={handleSnackClose}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={handleSnackClose} 
+          severity={error ? 'error' : 'success'}
+          sx={{ 
+            width: '100%',
+            border: '1px solid #000',
+            '& .MuiAlert-icon': {
+              color: '#000',
+            },
+          }}
+        >
+          {error || success}
+        </Alert>
+      </Snackbar>
     </Card>
   );
 }

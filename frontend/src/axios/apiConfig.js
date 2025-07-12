@@ -1,14 +1,14 @@
 // API Configuration
 export const API_CONFIG = {
-  BASE_URL: 'http://localhost:5000/user/api',
+  BASE_URL: 'http://localhost:5000/api/users',
   TIMEOUT: 10000,
   
   // Environment-specific configurations
   DEVELOPMENT: {
-    BASE_URL: 'http://localhost:5000/user/api',
+    BASE_URL: 'http://localhost:5000/api/users',
   },
   PRODUCTION: {
-    BASE_URL: 'https://your-production-api.com/user/api',
+    BASE_URL: 'https://your-production-api.com/api/users',
   }
 };
 
@@ -23,6 +23,8 @@ export const API_ENDPOINTS = {
     LOGIN_WITH_OTP: '/login-with-otp',
     LOGOUT: '/logout',
     PROFILE: '/profile',
+    UPDATE_PROFILE: '/profile',
+    PROFILE_STATUS: '/profile/status',
     REFRESH_TOKEN: '/refresh-token',
   },
   // Add other endpoint categories here as needed

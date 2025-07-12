@@ -82,8 +82,8 @@ const registerUser = asynchandler(async (req, res) => {
     .json(
       new ApiResponse(
         201,
-        createdUser,
-        "User registered successfully. Please check your email for verification OTP."
+        "User registered successfully. Please check your email for verification OTP.",
+        createdUser
       )
     );
 });
@@ -122,7 +122,7 @@ const verifyEmailOTP = asynchandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(new ApiResponse(200, "Email verified successfully"));
+    .json(new ApiResponse(200, "Email verified successfully", { emailVerified: true }));
 });
 
 // Resend Email Verification OTP
@@ -158,7 +158,7 @@ const resendEmailOTP = asynchandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(new ApiResponse(200, "Verification OTP sent successfully"));
+    .json(new ApiResponse(200, "Verification OTP sent successfully", { emailSent: true }));
 });
 
 // Login User with Password
@@ -330,7 +330,7 @@ const getCurrentUser = asynchandler(async (req, res) => {
   const user = await User.findById(req.user._id)
     .select("-password -refresh_token")
     .lean();
-  return res.status(200).json(new ApiResponse(200, user, "User details"));
+  return res.status(200).json(new ApiResponse(200, "User details", user));
 });
 
 // Refresh Token
@@ -431,7 +431,7 @@ const updateProfile = asynchandler(async (req, res) => {
   const userResponse = await User.findById(userId).select("-password -refresh_token -otp -otpExpiry");
   
   res.status(200).json(
-    new ApiResponse(200, userResponse, "Profile updated successfully")
+    new ApiResponse(200, "Profile updated successfully", userResponse)
   );
 });
 
