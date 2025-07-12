@@ -9,10 +9,10 @@ import ProductList from './components/ProductList';
 import HowItWorks from './components/HowItWorks';
 import Footer from './components/Footer';
 
-const Home = () => {
+const Home = ({ onLogout }) => {
   return (
     <Box>
-      <Navbar />
+      <Navbar onLogout={onLogout} />
       <Container maxWidth="lg">
         <Hero />
         <SearchBar />

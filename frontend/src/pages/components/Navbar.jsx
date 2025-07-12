@@ -61,12 +61,6 @@ export default function Navbar() {
     closeMobileMenu();
   };
 
-    const handleDash = () => {
-    // Navigate to login/signup page using React Router
-    navigate('/dashboard');
-    closeMobileMenu();
-  };
-
   const handleHowItWorks = () => {
     // Smooth scroll to How It Works section
     const howItWorksSection = document.querySelector('#how-it-works');
@@ -109,18 +103,14 @@ export default function Navbar() {
         </button>
         <button onClick={handleAbout} className="hover:text-black transition-colors duration-200">About</button>
         <button onClick={handleMessages} className="hover:text-black transition-colors duration-200">Messages</button>
-        <button 
-          onClick={handleAddItem} 
-          className="bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors duration-200 font-medium"
-        >
-          + Add List
-        </button>
-         <button 
-              onClick={handleDash}
-              className="hover:text-black transition-colors duration-200"
-            >
-              Dashboard
-            </button>
+        {isAuthenticated && (
+          <button 
+            onClick={handleAddItem} 
+            className="bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors duration-200 font-medium"
+          >
+            + Add List
+          </button>
+        )}
       </nav>
 
       {/* Desktop Auth Buttons */}
@@ -156,19 +146,6 @@ export default function Navbar() {
             </button>
           </>
         )}
-        
-        <button 
-          onClick={handleLogin}
-          className="text-sm font-medium text-gray-700 hover:text-black transition-colors duration-200"
-        >
-          Login
-        </button>
-        <button 
-          onClick={handleLogin}
-          className="bg-black text-white px-4 py-1.5 rounded-lg hover:bg-gray-800 transition-colors duration-200"
-        >
-          Sign Up
-        </button>
       </div>
 
       {/* Mobile Hamburger Button */}

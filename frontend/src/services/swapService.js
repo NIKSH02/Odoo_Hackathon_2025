@@ -61,6 +61,21 @@ class SwapService {
       method: 'PUT',
     });
   }
+
+  // Get swap messages
+  static async getSwapMessages(swapId) {
+    return this.makeRequest(`/swaps/${swapId}/messages`, {
+      method: 'GET',
+    });
+  }
+
+  // Send swap message
+  static async sendSwapMessage(swapId, message) {
+    return this.makeRequest(`/swaps/${swapId}/messages`, {
+      method: 'POST',
+      data: { message },
+    });
+  }
 }
 
 export default SwapService;

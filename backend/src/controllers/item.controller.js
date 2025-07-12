@@ -9,7 +9,7 @@ const { uploadOnCloudinary } = require("../utils/cloudinary");
 const getAllItems = asyncHandler(async (req, res) => {
   const { category, subCategory, size, condition, status } = req.query;
   
-  let filter = { approved: true };
+  let filter = {}; // Remove approved filter for now
   
   if (category) filter.category = category;
   if (subCategory) filter.subCategory = subCategory;
@@ -17,12 +17,43 @@ const getAllItems = asyncHandler(async (req, res) => {
   if (condition) filter.condition = condition;
   if (status) filter.status = status;
 
+  console.log('getAllItems filter:', filter);
+
   const items = await Item.find(filter)
     .populate('listedBy', 'username email')
     .sort({ createdAt: -1 });
 
+  console.log('Found items:', items.length);
+
   res.status(200).json(
-    new ApiResponse(200, items, "Items retrieved successfully")
+    new ApiResponse(200, "Items retrieved successfully", items)
+  );
+});
+
+// Get current user's items
+const getUserItems = asyncHandler(async (req, res) => {
+  const { category, subCategory, size, condition, status } = req.query;
+  
+  console.log('getUserItems called for user:', req.user._id);
+  
+  let filter = { listedBy: req.user._id };
+  
+  if (category) filter.category = category;
+  if (subCategory) filter.subCategory = subCategory;
+  if (size) filter.size = size;
+  if (condition) filter.condition = condition;
+  if (status) filter.status = status;
+
+  console.log('Filter for getUserItems:', filter);
+
+  const items = await Item.find(filter)
+    .populate('listedBy', 'username email')
+    .sort({ createdAt: -1 });
+
+  console.log('Found user items:', items.length);
+
+  res.status(200).json(
+    new ApiResponse(200, items, "User items retrieved successfully")
   );
 });
 
@@ -38,7 +69,7 @@ const getItemById = asyncHandler(async (req, res) => {
   }
 
   res.status(200).json(
-    new ApiResponse(200, item, "Item retrieved successfully")
+    new ApiResponse(200, "Item retrieved successfully", item)
   );
 });
 
@@ -58,7 +89,7 @@ const createItem = asyncHandler(async (req, res) => {
     throw new ApiError(400, "At least one image is required");
   }
 
-  // Handle single or multiple files
+  // Handle single or multiple files (express-fileupload format)
   const files = Array.isArray(req.files.images) ? req.files.images : [req.files.images];
 
   // Upload images to cloudinary directly from buffer
@@ -81,7 +112,6 @@ const createItem = asyncHandler(async (req, res) => {
     category,
     subCategory,
     size,
-	
     condition,
     pointsCost,
     listedBy: req.user._id,
@@ -94,7 +124,7 @@ const createItem = asyncHandler(async (req, res) => {
   );
 
   res.status(201).json(
-    new ApiResponse(201, item, "Item created successfully")
+    new ApiResponse(201, "Item created successfully", item)
   );
 });
 
@@ -116,11 +146,10 @@ const updateItem = asyncHandler(async (req, res) => {
 
   // Handle new images if provided
   let imageUrls = item.images;
-  if (req.files && req.files.images) {
-    const files = Array.isArray(req.files.images) ? req.files.images : [req.files.images];
+  if (req.files && req.files.length > 0) {
     imageUrls = [];
-    for (const file of files) {
-      const result = await uploadOnCloudinary(file.data, file.name);
+    for (const file of req.files) {
+      const result = await uploadOnCloudinary(file.buffer, file.originalname);
       if (result) {
         imageUrls.push(result.secure_url);
       }
@@ -177,6 +206,7 @@ const deleteItem = asyncHandler(async (req, res) => {
 
 module.exports = {
   getAllItems,
+  getUserItems,
   getItemById,
   createItem,
   updateItem,

@@ -1,5 +1,4 @@
 import * as React from 'react';
-import { useNavigate } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import MuiCard from '@mui/material/Card';
@@ -13,7 +12,6 @@ import Snackbar from '@mui/material/Snackbar';
 import CircularProgress from '@mui/material/CircularProgress';
 import { styled } from '@mui/material/styles';
 import AuthService from '../../services/authService';
-import { useAuth } from '../../hooks/useAuthContext';
 
 const Card = styled(MuiCard)(({ theme }) => ({
   display: 'flex',
@@ -58,9 +56,7 @@ const BlackOutlinedButton = styled(Button)(() => ({
   },
 }));
 
-export default function SignInCard() {
-  const { login } = useAuth();
-  const navigate = useNavigate();
+export default function SignInCard({ onLogin }) {
   // Form state management
   const [isSignUp, setIsSignUp] = React.useState(false);
   const [showEmailVerification, setShowEmailVerification] = React.useState(false);
@@ -135,15 +131,25 @@ export default function SignInCard() {
     setError('');
 
     try {
-      const response = await login({
+      const response = await AuthService.login({
         email: formData.email,
         password: formData.password
       });
 
-      if (response && response.success) {
+      if (response.success) {
         setSuccess('Login successful!');
         setShowSnackbar(true);
         
+        // Handle different response structures
+        const responseData = response.data || response.message;
+        if (responseData && responseData.accessToken) {
+          localStorage.setItem('accessToken', responseData.accessToken);
+        }
+        
+        // Call parent login handler
+        if (onLogin) {
+          onLogin(responseData?.user || responseData);
+        }
       }
     } catch (error) {
       setError(error.message || 'Login failed');

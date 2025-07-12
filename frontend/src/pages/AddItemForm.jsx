@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Camera, X, Plus, Upload, Tag, Shirt, Package, Star, Users, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import ItemService from '../services/itemService';
+import { useAuth } from '../hooks/useAuth';
 
 export default function AddItemForm() {
   const [images, setImages] = useState([]);
@@ -8,39 +10,78 @@ export default function AddItemForm() {
     title: '',
     description: '',
     category: '',
-    type: '',
+    subCategory: '',
     size: '',
     condition: '',
-    tags: [],
-    brand: '',
-    color: '',
-    price: ''
+    pointsCost: ''
   });
   const [dragOver, setDragOver] = useState(false);
-  const [currentTag, setCurrentTag] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [userItems, setUserItems] = useState([]);
+  const [loadingUserItems, setLoadingUserItems] = useState(true);
   const navigate = useNavigate();
+  const { user, isAuthenticated } = useAuth();
+
+  // Load user's recent items
+  useEffect(() => {
+    const loadUserItems = async () => {
+      if (!isAuthenticated) return;
+      
+      try {
+        setLoadingUserItems(true);
+        const response = await ItemService.getUserItems();
+        if (response && response.data) {
+          setUserItems(Array.isArray(response.data) ? response.data.slice(0, 4) : []);
+        }
+      } catch (error) {
+        console.error('Error loading user items:', error);
+      } finally {
+        setLoadingUserItems(false);
+      }
+    };
+
+    loadUserItems();
+  }, [isAuthenticated]);
 
   const categories = [
-    'Tops', 'Bottoms', 'Dresses', 'Outerwear', 'Shoes', 
-    'Accessories', 'Bags', 'Jewelry', 'Activewear', 'Formal'
+    'Men',
+    'Women', 
+    'Kids',
+    'Accessories',
+    'Shoes'
   ];
 
+  const subCategories = {
+    Men: ['casual', 'formal', 'sportswear', 'outerwear'],
+    Women: ['casual', 'formal', 'sportswear', 'outerwear', 'dresses'],
+    Kids: ['casual', 'formal', 'sportswear', 'outerwear'],
+    Accessories: ['bags', 'jewelry', 'watches', 'belts'],
+    Shoes: ['casual', 'formal', 'sportswear', 'boots']
+  };
+
   const conditions = [
-    'Like New', 'Excellent', 'Good', 'Fair', 'Worn'
+    'like-new', 'excellent', 'good', 'fair'
   ];
 
   const sizes = [
     'XS', 'S', 'M', 'L', 'XL', 'XXL', 
-    '6', '8', '10', '12', '14', '16', '18'
+    '6', '7', '8', '9', '10', '11', '12'
   ];
 
   const handleImageUpload = (files) => {
+    if (!files || files.length === 0) {
+      return;
+    }
+    
     const newImages = Array.from(files).slice(0, 6 - images.length);
+    
     const imageUrls = newImages.map(file => ({
       id: Date.now() + Math.random(),
       url: URL.createObjectURL(file),
       file: file
     }));
+    
     setImages(prev => [...prev, ...imageUrls]);
   };
 
@@ -62,27 +103,44 @@ export default function AddItemForm() {
     }));
   };
 
-  const addTag = () => {
-    if (currentTag.trim() && !formData.tags.includes(currentTag.trim())) {
-      setFormData(prev => ({
-        ...prev,
-        tags: [...prev.tags, currentTag.trim()]
-      }));
-      setCurrentTag('');
-    }
-  };
-
-  const removeTag = (tagToRemove) => {
-    setFormData(prev => ({
-      ...prev,
-      tags: prev.tags.filter(tag => tag !== tagToRemove)
-    }));
-  };
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Form submitted:', { formData, images });
-    // Handle form submission here
+    setError('');
+    setIsLoading(true);
+
+    try {
+      // Validate required fields
+      if (!formData.title || !formData.description || !formData.category || 
+          !formData.subCategory || !formData.size || !formData.condition || 
+          !formData.pointsCost || images.length === 0) {
+        setError('Please fill in all required fields and add at least one image');
+        return;
+      }
+
+      // Prepare data object for the service
+      const itemData = {
+        title: formData.title,
+        description: formData.description,
+        category: formData.category,
+        subCategory: formData.subCategory,
+        size: formData.size,
+        condition: formData.condition,
+        pointsCost: parseInt(formData.pointsCost),
+        images: images.map(image => image.file)
+      };
+
+      // Submit to backend
+      await ItemService.createItem(itemData);
+      
+      // Navigate to browse or dashboard on success
+      navigate('/browse', { replace: true });
+      
+    } catch (error) {
+      console.error('Error creating item:', error);
+      setError(error.response?.data?.message || 'Failed to create item. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleArrow = () => {
@@ -192,15 +250,49 @@ export default function AddItemForm() {
               {/* Previous Listings Preview */}
               <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
                 <h3 className="text-lg font-semibold mb-4">Your Recent Listings</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  {[1, 2, 3, 4].map((item) => (
-                    <div key={item} className="bg-gray-50 rounded-lg p-3 hover:bg-gray-100 transition-colors cursor-pointer">
-                      <div className="h-20 bg-gradient-to-br from-gray-200 to-gray-300 rounded-lg mb-2"></div>
-                      <p className="text-sm font-medium text-gray-700">Vintage Denim Jacket</p>
-                      <p className="text-xs text-gray-500">Listed 2 days ago</p>
-                    </div>
-                  ))}
-                </div>
+                
+                {loadingUserItems ? (
+                  <div className="grid grid-cols-2 gap-4">
+                    {[1, 2, 3, 4].map((item) => (
+                      <div key={item} className="bg-gray-100 rounded-lg p-3 animate-pulse">
+                        <div className="h-20 bg-gray-200 rounded-lg mb-2"></div>
+                        <div className="h-4 bg-gray-200 rounded mb-1"></div>
+                        <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+                      </div>
+                    ))}
+                  </div>
+                ) : userItems.length > 0 ? (
+                  <div className="grid grid-cols-2 gap-4">
+                    {userItems.map((item) => (
+                      <div key={item._id} className="bg-gray-50 rounded-lg p-3 hover:bg-gray-100 transition-colors cursor-pointer">
+                        <div className="h-20 bg-gradient-to-br from-gray-200 to-gray-300 rounded-lg mb-2 overflow-hidden">
+                          {item.images && item.images[0] ? (
+                            <img 
+                              src={item.images[0]} 
+                              alt={item.title}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <Shirt className="h-8 w-8 text-gray-400" />
+                            </div>
+                          )}
+                        </div>
+                        <p className="text-sm font-medium text-gray-700 truncate">{item.title}</p>
+                        <p className="text-xs text-gray-500">{item.pointsCost} points</p>
+                        <p className="text-xs text-gray-500">
+                          {new Date(item.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <Shirt className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                    <p className="text-gray-500 text-sm">No items listed yet</p>
+                    <p className="text-gray-400 text-xs">Your recent listings will appear here</p>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -229,7 +321,10 @@ export default function AddItemForm() {
                       <label className="block text-sm font-medium text-gray-700 mb-2">Category *</label>
                       <select
                         value={formData.category}
-                        onChange={(e) => handleInputChange('category', e.target.value)}
+                        onChange={(e) => {
+                          handleInputChange('category', e.target.value);
+                          handleInputChange('subCategory', ''); // Reset subcategory when category changes
+                        }}
                         className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
                       >
                         <option value="">Select Category</option>
@@ -239,6 +334,23 @@ export default function AddItemForm() {
                       </select>
                     </div>
 
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Subcategory *</label>
+                      <select
+                        value={formData.subCategory}
+                        onChange={(e) => handleInputChange('subCategory', e.target.value)}
+                        disabled={!formData.category}
+                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors disabled:bg-gray-100"
+                      >
+                        <option value="">Select Subcategory</option>
+                        {formData.category && subCategories[formData.category]?.map(subCat => (
+                          <option key={subCat} value={subCat}>{subCat}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Size *</label>
                       <select
@@ -252,35 +364,23 @@ export default function AddItemForm() {
                         ))}
                       </select>
                     </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Brand</label>
-                      <input
-                        type="text"
-                        value={formData.brand}
-                        onChange={(e) => handleInputChange('brand', e.target.value)}
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
-                        placeholder="e.g., Zara, H&M, Uniqlo"
-                      />
-                    </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Color</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Points Cost *</label>
                       <input
-                        type="text"
-                        value={formData.color}
-                        onChange={(e) => handleInputChange('color', e.target.value)}
+                        type="number"
+                        min="1"
+                        value={formData.pointsCost}
+                        onChange={(e) => handleInputChange('pointsCost', e.target.value)}
                         className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
-                        placeholder="e.g., Navy Blue, Black"
+                        placeholder="e.g., 50"
                       />
                     </div>
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Condition *</label>
-                    <div className="grid grid-cols-5 gap-2">
+                    <div className="grid grid-cols-4 gap-2">
                       {conditions.map((condition) => (
                         <button
                           key={condition}
@@ -292,7 +392,9 @@ export default function AddItemForm() {
                               : 'bg-white text-gray-700 border-gray-300 hover:border-emerald-300'
                           }`}
                         >
-                          {condition}
+                          {condition === 'like-new' ? 'Like New' : 
+                           condition === 'excellent' ? 'Excellent' : 
+                           condition === 'good' ? 'Good' : 'Fair'}
                         </button>
                       ))}
                     </div>
@@ -308,44 +410,6 @@ export default function AddItemForm() {
                       placeholder="Describe the item's condition, style, fit, and any unique features..."
                     />
                   </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Tags</label>
-                    <div className="flex flex-wrap gap-2 mb-3">
-                      {formData.tags.map((tag) => (
-                        <span
-                          key={tag}
-                          className="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-sm flex items-center"
-                        >
-                          {tag}
-                          <button
-                            type="button"
-                            onClick={() => removeTag(tag)}
-                            className="ml-2 bg-gradient-to-br from-gray-300 via-gray-800 to-black"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        </span>
-                      ))}
-                    </div>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={currentTag}
-                        onChange={(e) => setCurrentTag(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
-                        className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
-                        placeholder="Add tags like 'vintage', 'casual', 'summer'"
-                      />
-                      <button
-                        type="button"
-                        onClick={addTag}
-                        className="px-4 py-3 text-white rounded-lg transition-colors bg-gradient-to-br from-gray-300 via-gray-800 to-black"
-                      >
-                        <Plus className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </div>
                 </div>
               </div>
 
@@ -360,18 +424,26 @@ export default function AddItemForm() {
                 </div>
                 <p className="text-gray-600 mb-6">Your item will be reviewed and approved within 24 hours.</p>
                 
+                {error && (
+                  <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+                    {error}
+                  </div>
+                )}
+                
                 <div className="flex gap-4">
                   <button
                     type="button"
                     className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                    disabled={isLoading}
                   >
                     Save as Draft
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 px-6 py-3 bg-gradient-to-r bg-gradient-to-br from-gray-500 via-gray-800 to-black text-white rounded-lg transition-colors font-medium"
+                    disabled={isLoading}
+                    className="flex-1 px-6 py-3 bg-gradient-to-br from-gray-500 via-gray-800 to-black text-white rounded-lg transition-colors font-medium disabled:opacity-50"
                   >
-                    List Item
+                    {isLoading ? 'Creating...' : 'List Item'}
                   </button>
                 </div>
               </div>

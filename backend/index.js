@@ -25,11 +25,6 @@ app.use(
   })
 );
 
-
-app.use(express.json()); // This is a built-in middleware function in Express. It parses incoming requests with JSON payloads and is based on body-parser.
-app.use(express.urlencoded({ extended: true })); // This is a built-in middleware function in Express. It parses incoming requests with urlencoded payloads and is based on body-parser.
-app.use(express.static("public")); // This is a built-in middleware function in Express. It serves static files and is based on serve-static.
-
 app.use(cookieParser()); // This is a third-party middleware function in Express. It parses cookies attached to the client request object.
 
 app.use(
@@ -37,8 +32,26 @@ app.use(
     useTempFiles: false, // Use memory storage instead of temp files
     limits: { fileSize: 10 * 1024 * 1024 }, // 10MB per file
     abortOnLimit: true,
+    debug: true, // Enable debug logging
   })
 );
+
+// Global debug middleware
+app.use((req, res, next) => {
+  if (req.path.includes('/items') && req.method === 'POST') {
+    console.log('=== INCOMING REQUEST ===');
+    console.log('Content-Type:', req.headers['content-type']);
+    console.log('req.files exists:', !!req.files);
+    console.log('req.files keys:', req.files ? Object.keys(req.files) : 'no files');
+    console.log('req.body keys:', Object.keys(req.body));
+    console.log('========================');
+  }
+  next();
+});
+
+app.use(express.json()); // This is a built-in middleware function in Express. It parses incoming requests with JSON payloads and is based on body-parser.
+app.use(express.urlencoded({ extended: true })); // This is a built-in middleware function in Express. It parses incoming requests with urlencoded payloads and is based on body-parser.
+app.use(express.static("public")); // This is a built-in middleware function in Express. It serves static files and is based on serve-static.
 
 app.use("/api/users", userRouter); 
 app.use("/api/items", itemRouter);

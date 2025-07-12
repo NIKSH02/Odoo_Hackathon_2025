@@ -1,14 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Navbar from './components/Navbar';
 import Modal from './Modal';
-import ItemService from '../services/itemService';
-import SwapService from '../services/swapService';
-import PointsService from '../services/pointsService';
-import { useAuth } from '../hooks/useAuthContext';
 
-export default function Browse() {
-  const { user, isAuthenticated } = useAuth();
+export default function Browse({ onLogout }) {
   const [favorites, setFavorites] = useState(new Set());
   const [filterCategory, setFilterCategory] = useState('All');
   const [filterCondition, setFilterCondition] = useState('All');
@@ -35,7 +30,9 @@ export default function Browse() {
         console.log('Items response:', response); // Debug log
         
         if (response && response.data) {
-          setProducts(Array.isArray(response.data) ? response.data : []);
+          const itemsData = Array.isArray(response.data) ? response.data : [];
+          console.log('Processing items:', itemsData.length, itemsData); // Debug log
+          setProducts(itemsData);
         } else {
           setProducts([]);
         }
@@ -56,7 +53,7 @@ export default function Browse() {
       if (!isAuthenticated) return;
       
       try {
-        const response = await ItemService.getAllItems({ userItems: true });
+        const response = await ItemService.getUserItems();
         if (response && response.data) {
           setUserListings(Array.isArray(response.data) ? response.data : []);
         } else {
@@ -71,11 +68,7 @@ export default function Browse() {
   }, [isAuthenticated]);
 
   // Handler functions for modals
-  const handleRequestSwap = async (product) => {
-    if (!isAuthenticated) {
-      alert('Please login to request a swap');
-      return;
-    }
+  const handleRequestSwap = (product) => {
     setSelectedProductForSwap(product);
     setIsSwapModalOpen(true);
   };
@@ -85,11 +78,7 @@ export default function Browse() {
     setSelectedProductForSwap(null);
   };
 
-  const handleBuyWithPoints = async (product) => {
-    if (!isAuthenticated) {
-      alert('Please login to buy with points');
-      return;
-    }
+  const handleBuyWithPoints = (product) => {
     setSelectedProductForPurchase(product);
     setIsPurchaseModalOpen(true);
   };
@@ -98,6 +87,7 @@ export default function Browse() {
     setIsPurchaseModalOpen(false);
     setSelectedProductForPurchase(null);
   };
+
 
   const toggleFavorite = (productId) => {
     const newFavorites = new Set(favorites);
@@ -149,7 +139,7 @@ export default function Browse() {
 
   // Filter and sort products
   const filteredProducts = (products || [])
-    .filter(product => product?.approved && product?.status === 'available')
+    .filter(product => product?.status === 'available')
     .filter(product => filterCategory === 'All' || product?.category === filterCategory)
     .filter(product => filterCondition === 'All' || product?.condition === filterCondition)
     .sort((a, b) => {
@@ -210,7 +200,7 @@ export default function Browse() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar />
+      <Navbar onLogout={onLogout} />
       
       {/* Hero Section */}
       <motion.section 
@@ -315,7 +305,7 @@ export default function Browse() {
               animate={{ opacity: 1 }}
               transition={{ delay: 0.8 }}
             >
-              Showing {filteredProducts.length} of {products.filter(p => p.approved && p.status === 'available').length} items
+              Showing {filteredProducts.length} of {products.filter(p => p.status === 'available').length} items
             </motion.div>
           </div>
         </div>
@@ -429,7 +419,9 @@ export default function Browse() {
 
                     {/* Listed By */}
                     <div className="text-xs text-gray-500 mb-3 group-hover:text-gray-600 transition-colors duration-300">
-                      <span className="font-medium">Listed by @{product.listedBy.username}</span>
+                      <span className="font-medium">
+                        Listed by @{product.listedBy?.username || 'Unknown User'}
+                      </span>
                     </div>
 
                     {/* Action Buttons */}
@@ -525,13 +517,11 @@ const SwapRequestModal = ({ selectedProduct, userListings, onClose }) => {
     });
     setIsRequestSent(true);
     
-    // Auto close modal after 2 seconds and redirect to messages
+    // Auto close modal after 2 seconds
     setTimeout(() => {
       onClose();
       setIsRequestSent(false);
       setSelectedUserItem(null);
-      // Redirect to messages page
-      window.location.href = '/messages';
     }, 2000);
   };
 
@@ -691,12 +681,10 @@ const PurchaseConfirmationModal = ({ selectedProduct, onClose }) => {
         title: selectedProduct.title
       });
       
-      // Auto close modal after 2 seconds and redirect to messages
+      // Auto close modal after 2 seconds
       setTimeout(() => {
         onClose();
         setIsPurchaseComplete(false);
-        // Redirect to messages page
-        window.location.href = '/messages';
       }, 2000);
     }, 1500);
   };

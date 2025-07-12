@@ -5,15 +5,17 @@ import { API_CONFIG } from './apiConfig';
 const axiosInstance = axios.create({
   baseURL: API_CONFIG.BASE_URL,
   timeout: API_CONFIG.TIMEOUT,
-  headers: {
-    'Content-Type': 'application/json',
-  },
   withCredentials: true, // Include cookies for authentication
 });
 
 // Request interceptor to add auth token or handle requests
 axiosInstance.interceptors.request.use(
   (config) => {
+    // Don't set Content-Type for FormData - let browser set it with boundary
+    if (!(config.data instanceof FormData)) {
+      config.headers['Content-Type'] = 'application/json';
+    }
+    
     // You can add auth token here if needed
     // const token = localStorage.getItem('authToken');
     // if (token) {

@@ -52,7 +52,7 @@ const ItemSchema = new mongoose.Schema(
     },
     approved: {
       type: Boolean,
-      default: false,
+      default: true, // Auto-approve items for now
     },
   },
   { timestamps: true }

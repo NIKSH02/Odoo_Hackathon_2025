@@ -62,7 +62,7 @@ class ItemService {
 
     // Add image files
     if (itemData.images && itemData.images.length > 0) {
-      itemData.images.forEach(image => {
+      itemData.images.forEach((image) => {
         formData.append('images', image);
       });
     }
@@ -70,9 +70,7 @@ class ItemService {
     return this.makeRequest(API_ENDPOINTS.ITEMS.CREATE, {
       method: 'POST',
       data: formData,
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
+      // Don't set Content-Type header - let browser set it with boundary
     });
   }
 
@@ -99,9 +97,7 @@ class ItemService {
     return this.makeRequest(`${API_ENDPOINTS.ITEMS.UPDATE}/${id}`, {
       method: 'PUT',
       data: formData,
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
+      // Don't set Content-Type header - let browser set it with boundary
     });
   }
 
@@ -114,9 +110,8 @@ class ItemService {
 
   // Get user's items (listings)
   static async getUserItems() {
-    return this.makeRequest(API_ENDPOINTS.ITEMS.GET_ALL, {
+    return this.makeRequest(API_ENDPOINTS.ITEMS.GET_USER_ITEMS, {
       method: 'GET',
-      params: { userItems: true }, // Backend should filter by user
     });
   }
 }
