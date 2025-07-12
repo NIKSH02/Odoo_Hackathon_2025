@@ -439,15 +439,35 @@ const ReWearUserDashboard = () => {
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-white"
             />
           </div>
+          <div>
+            <label className="block text-sm font-medium text-white mb-2">
+              Location-
+            </label>
+            <input
+              type="text"
+              placeholder="Enter your city"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-white"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-white mb-2">
+              Location
+            </label>
+            <input
+              type="text"
+              placeholder="Enter your city"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-white"
+            />
+          </div>
         </div>
 
         <div className="mt-6">
           <label className="block text-sm font-medium text-white mb-2">
-            Bio
+            Address
           </label>
           <textarea
             rows={4}
-            placeholder="Tell us about yourself and your fashion interests..."
+            placeholder="Share Your Address..."
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-white"
           />
         </div>
