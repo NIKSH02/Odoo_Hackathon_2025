@@ -1,0 +1,169 @@
+{
+  "info": {
+    "name": "ReWear API - Email Verification",
+    "description": "API collection for ReWear user registration and email verification",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000/user/api",
+      "type": "string"
+    },
+    {
+      "key": "userEmail",
+      "value": "test@example.com",
+      "type": "string"
+    },
+    {
+      "key": "userPassword",
+      "value": "password123",
+      "type": "string"
+    },
+    {
+      "key": "username",
+      "value": "testuser",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Register User",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"{{username}}\",\n  \"email\": \"{{userEmail}}\",\n  \"password\": \"{{userPassword}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/register",
+          "host": ["{{baseUrl}}"],
+          "path": ["register"]
+        },
+        "description": "Register a new user. This will send an OTP to the provided email address."
+      },
+      "response": []
+    },
+    {
+      "name": "2. Verify Email OTP",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{userEmail}}\",\n  \"otp\": \"123456\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/verify-email",
+          "host": ["{{baseUrl}}"],
+          "path": ["verify-email"]
+        },
+        "description": "Verify email using the OTP received in email. Replace '123456' with the actual OTP from email."
+      },
+      "response": []
+    },
+    {
+      "name": "3. Resend Email OTP",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{userEmail}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/resend-email-otp",
+          "host": ["{{baseUrl}}"],
+          "path": ["resend-email-otp"]
+        },
+        "description": "Resend verification OTP if the previous one expired or was not received."
+      },
+      "response": []
+    },
+    {
+      "name": "4. Login User",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{userEmail}}\",\n  \"password\": \"{{userPassword}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["login"]
+        },
+        "description": "Login user after email verification is complete."
+      },
+      "response": []
+    },
+    {
+      "name": "5. Send Login OTP",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{userEmail}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/send-login-otp",
+          "host": ["{{baseUrl}}"],
+          "path": ["send-login-otp"]
+        },
+        "description": "Send OTP for login instead of using password."
+      },
+      "response": []
+    },
+    {
+      "name": "6. Login with OTP",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{userEmail}}\",\n  \"otp\": \"123456\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/login-with-otp",
+          "host": ["{{baseUrl}}"],
+          "path": ["login-with-otp"]
+        },
+        "description": "Login using OTP instead of password. Replace '123456' with actual OTP from email."
+      },
+      "response": []
+    }
+  ]
+}
