@@ -7,6 +7,7 @@ import Authentication from './pages/Authentication';
 import Home from './pages/Home';
 import Browse from './pages/Browse';
 import About from './pages/About';
+import Messages from './pages/Messages';
 import AddItemForm from './pages/AddItemForm';
 import ReWearUserDashboard from './pages/RewearUserDashboard';
 
@@ -66,6 +67,10 @@ function App() {
           <Route 
             path='/about' 
             element={<About onLogout={handleLogout} />} 
+          />
+          <Route 
+            path='/messages' 
+            element={<Messages onLogout={handleLogout} />} 
           />
           <Route 
             path='/' 

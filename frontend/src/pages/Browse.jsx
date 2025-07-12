@@ -664,11 +664,13 @@ const SwapRequestModal = ({ selectedProduct, userListings, onClose }) => {
     });
     setIsRequestSent(true);
     
-    // Auto close modal after 2 seconds
+    // Auto close modal after 2 seconds and redirect to messages
     setTimeout(() => {
       onClose();
       setIsRequestSent(false);
       setSelectedUserItem(null);
+      // Redirect to messages page
+      window.location.href = '/messages';
     }, 2000);
   };
 
@@ -828,10 +830,12 @@ const PurchaseConfirmationModal = ({ selectedProduct, onClose }) => {
         title: selectedProduct.title
       });
       
-      // Auto close modal after 2 seconds
+      // Auto close modal after 2 seconds and redirect to messages
       setTimeout(() => {
         onClose();
         setIsPurchaseComplete(false);
+        // Redirect to messages page
+        window.location.href = '/messages';
       }, 2000);
     }, 1500);
   };

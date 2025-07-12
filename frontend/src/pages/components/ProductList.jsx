@@ -583,6 +583,7 @@ export default function ProductList() {
 
 // Swap Request Modal Component
 const SwapRequestModal = ({ selectedProduct, userListings, onClose }) => {
+  const navigate = useNavigate();
   const [selectedUserItem, setSelectedUserItem] = useState(null);
   const [isRequestSent, setIsRequestSent] = useState(false);
 
@@ -598,11 +599,13 @@ const SwapRequestModal = ({ selectedProduct, userListings, onClose }) => {
     });
     setIsRequestSent(true);
     
-    // Auto close modal after 2 seconds
+    // Auto close modal after 2 seconds and redirect to messages
     setTimeout(() => {
       onClose();
       setIsRequestSent(false);
       setSelectedUserItem(null);
+      // Redirect to messages page
+      navigate('/messages');
     }, 2000);
   };
 
@@ -744,6 +747,7 @@ const SwapRequestModal = ({ selectedProduct, userListings, onClose }) => {
 
 // Purchase Confirmation Modal Component
 const PurchaseConfirmationModal = ({ selectedProduct, onClose }) => {
+  const navigate = useNavigate();
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [isPurchaseComplete, setIsPurchaseComplete] = useState(false);
 
@@ -762,10 +766,12 @@ const PurchaseConfirmationModal = ({ selectedProduct, onClose }) => {
         title: selectedProduct.title
       });
       
-      // Auto close modal after 2 seconds
+      // Auto close modal after 2 seconds and redirect to messages
       setTimeout(() => {
         onClose();
         setIsPurchaseComplete(false);
+        // Redirect to messages page
+        navigate('/messages');
       }, 2000);
     }, 1500);
   };
