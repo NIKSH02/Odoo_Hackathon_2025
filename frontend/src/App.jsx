@@ -5,6 +5,8 @@ import CssBaseline from '@mui/material/CssBaseline';
 import AppTheme from './shared-theme/AppTheme';
 import Authentication from './pages/Authentication';
 import Home from './pages/Home';
+import AddItemForm from './pages/AddItemForm';
+import ReWearUserDashboard from './pages/RewearUserDashboard';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -59,6 +61,18 @@ function App() {
             path='/' 
             element={<Navigate to='/home' replace />}
           />
+          <Route 
+            path='/addItem'
+            element={<AddItemForm />}
+         />
+          
+          <Route 
+          path='/dashboard'
+          element={
+            isAuthenticated &&
+            <ReWearUserDashboard /> 
+          } />
+
         </Routes>
       </Router>
     </>
