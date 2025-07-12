@@ -7,6 +7,7 @@ import Authentication from './pages/Authentication';
 import Home from './pages/Home';
 import Browse from './pages/Browse';
 import About from './pages/About';
+import Messages from './pages/Messages';
 import AddItemForm from './pages/AddItemForm';
 import ReWearUserDashboard from './pages/ReWearUserDashboard';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -35,6 +36,10 @@ function App() {
               element={<About />} 
             />
             <Route 
+              path='/messages' 
+              element={<Messages />} 
+            />
+          <Route 
               path='/' 
               element={<Navigate to='/home' replace />}
             />

@@ -17,29 +17,45 @@ export const AuthProvider = ({ children }) => {
       const token = localStorage.getItem('accessToken');
       if (token) {
         const response = await AuthService.getCurrentUser();
+        console.log('Current user response:', response); // Debug log
+        
         if (response && response.data) {
           setUser(response.data);
           setIsAuthenticated(true);
+          localStorage.setItem('user', JSON.stringify(response.data));
         }
       }
     } catch (error) {
       console.error('Auth check failed:', error);
       localStorage.removeItem('accessToken');
       localStorage.removeItem('user');
+      setIsAuthenticated(false);
+      setUser(null);
     } finally {
       setLoading(false);
     }
   };
 
   const login = async (credentials) => {
-    const response = await AuthService.login(credentials);
-    if (response.success && response.data) {
-      setUser(response.data.user);
-      setIsAuthenticated(true);
-      localStorage.setItem('accessToken', response.data.accessToken);
-      return response;
+    try {
+      const response = await AuthService.login(credentials);
+      console.log('Login response:', response); // Debug log
+      
+      if (response && response.data) {
+        const { accessToken, user: userData } = response.data;
+        
+        setUser(userData);
+        setIsAuthenticated(true);
+        localStorage.setItem('accessToken', accessToken);
+        localStorage.setItem('user', JSON.stringify(userData));
+        
+        return response;
+      }
+      throw new Error('Invalid response structure');
+    } catch (error) {
+      console.error('Login error:', error);
+      throw error;
     }
-    throw new Error('Login failed');
   };
 
   const logout = async () => {

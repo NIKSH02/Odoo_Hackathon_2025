@@ -32,8 +32,12 @@ export default function Browse() {
         if (filterCondition !== 'All') filters.condition = filterCondition;
         
         const response = await ItemService.getAllItems(filters);
-        if (response.success && response.data) {
-          setProducts(response.data);
+        console.log('Items response:', response); // Debug log
+        
+        if (response && response.data) {
+          setProducts(Array.isArray(response.data) ? response.data : []);
+        } else {
+          setProducts([]);
         }
       } catch (error) {
         console.error('Error loading products:', error);
@@ -53,8 +57,10 @@ export default function Browse() {
       
       try {
         const response = await ItemService.getAllItems({ userItems: true });
-        if (response.success && response.data) {
-          setUserListings(response.data);
+        if (response && response.data) {
+          setUserListings(Array.isArray(response.data) ? response.data : []);
+        } else {
+          setUserListings([]);
         }
       } catch (error) {
         console.error('Error loading user listings:', error);
@@ -142,10 +148,10 @@ export default function Browse() {
   };
 
   // Filter and sort products
-  const filteredProducts = products
-    .filter(product => product.approved && product.status === 'available')
-    .filter(product => filterCategory === 'All' || product.category === filterCategory)
-    .filter(product => filterCondition === 'All' || product.condition === filterCondition)
+  const filteredProducts = (products || [])
+    .filter(product => product?.approved && product?.status === 'available')
+    .filter(product => filterCategory === 'All' || product?.category === filterCategory)
+    .filter(product => filterCondition === 'All' || product?.condition === filterCondition)
     .sort((a, b) => {
       switch (sortBy) {
         case 'newest':
@@ -204,7 +210,7 @@ export default function Browse() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar onLogout={onLogout} />
+      <Navbar />
       
       {/* Hero Section */}
       <motion.section 
@@ -519,11 +525,13 @@ const SwapRequestModal = ({ selectedProduct, userListings, onClose }) => {
     });
     setIsRequestSent(true);
     
-    // Auto close modal after 2 seconds
+    // Auto close modal after 2 seconds and redirect to messages
     setTimeout(() => {
       onClose();
       setIsRequestSent(false);
       setSelectedUserItem(null);
+      // Redirect to messages page
+      window.location.href = '/messages';
     }, 2000);
   };
 
@@ -683,10 +691,12 @@ const PurchaseConfirmationModal = ({ selectedProduct, onClose }) => {
         title: selectedProduct.title
       });
       
-      // Auto close modal after 2 seconds
+      // Auto close modal after 2 seconds and redirect to messages
       setTimeout(() => {
         onClose();
         setIsPurchaseComplete(false);
+        // Redirect to messages page
+        window.location.href = '/messages';
       }, 2000);
     }, 1500);
   };
