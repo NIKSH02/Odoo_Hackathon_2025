@@ -401,18 +401,37 @@ const updateProfile = asynchandler(async (req, res) => {
   if (country !== undefined) updateData.country = country;
   if (pinCode !== undefined) updateData.pinCode = pinCode;
   
+  // First, update the user with the new data
   const updatedUser = await User.findByIdAndUpdate(
     userId,
     updateData,
     { new: true, runValidators: true }
-  ).select("-password -refresh_token -otp -otpExpiry");
+  );
   
   if (!updatedUser) {
     throw new apiError(404, "User not found");
   }
   
+  // Manually check and update profile completion status
+  const isComplete = updatedUser.fullName && 
+                    updatedUser.phoneNumber && 
+                    updatedUser.address && 
+                    updatedUser.state && 
+                    updatedUser.country && 
+                    updatedUser.pinCode &&
+                    updatedUser.isEmailVerified;
+  
+  // Update the isProfileComplete field if it changed
+  if (updatedUser.isProfileComplete !== isComplete) {
+    updatedUser.isProfileComplete = isComplete;
+    await updatedUser.save();
+  }
+  
+  // Return user without sensitive fields
+  const userResponse = await User.findById(userId).select("-password -refresh_token -otp -otpExpiry");
+  
   res.status(200).json(
-    new ApiResponse(200, updatedUser, "Profile updated successfully")
+    new ApiResponse(200, userResponse, "Profile updated successfully")
   );
 });
 
