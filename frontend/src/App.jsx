@@ -12,7 +12,7 @@ function App() {
 
   useEffect(() => {
     // Check if user is authenticated (check for token in localStorage)
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('accesstoken');
     if (token) {
       setIsAuthenticated(true);
     }
