@@ -44,7 +44,7 @@ function App() {
             </Route>
 
             {/* Redirect root to dashboard */}
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/" element={<Navigate to="/home" replace />} />
           </Routes>
         </Router>
       </AuthProvider>

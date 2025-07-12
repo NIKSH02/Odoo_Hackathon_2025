@@ -144,10 +144,6 @@ export default function SignInCard() {
         setSuccess('Login successful!');
         setShowSnackbar(true);
         
-        // Navigate to dashboard after successful login
-        setTimeout(() => {
-          navigate('/dashboard');
-        }, 1500);
       }
     } catch (error) {
       setError(error.message || 'Login failed');

@@ -21,7 +21,7 @@ const Login = () => {
 
       // Add a small delay to ensure context is updated
       setTimeout(() => {
-        navigate("/dashboard", { replace: true });
+        navigate("/home", { replace: true });
       }, 100);
     } catch (error) {
       console.error("Login error:", error); // Debug log
