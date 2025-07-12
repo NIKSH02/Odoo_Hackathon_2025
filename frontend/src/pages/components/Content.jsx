@@ -9,7 +9,7 @@ import { SitemarkIcon } from './CustomIcons';
 
 const items = [
   {
-    icon: <SwapHorizRoundedIcon sx={{ color: 'primary.main' }} />,
+    icon: <SwapHorizRoundedIcon sx={{ color: 'text.primary' }} />,
     title: 'Easy Clothing Exchange',
     description:
       'Swap your pre-loved clothes with others instantly. Find unique pieces while giving your wardrobe a fresh new look.',
@@ -45,7 +45,7 @@ export default function Content() {
           component="h2" 
           sx={{ 
             fontWeight: 'bold', 
-            color: 'primary.main',
+            color: 'text.primary',
             mb: 1
           }}
         >
