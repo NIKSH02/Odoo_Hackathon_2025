@@ -35,6 +35,27 @@ const UserSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    points: {
+      type: Number,
+      default: 0,
+    },
+    role: {
+      type: String,
+      enum: ['user', 'admin'],
+      default: 'user',
+    },
+    listedItems: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Item',
+    }],
+    swaps: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Swap',
+    }],
+    orders: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Order',
+    }],
   },
   { timestamps: true }
 );

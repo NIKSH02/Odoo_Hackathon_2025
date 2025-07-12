@@ -3,7 +3,9 @@ const apiError = require('../utils/apiError');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User.model');
 
-const verifyJWT = asynchandler(async (req, _, next) => {
+// Middleware that verifies JWT but doesn't check email verification
+// Used for routes like email verification, resend OTP, etc.
+const verifyJWTOnly = asynchandler(async (req, _, next) => {
  try {
        const token =  req.cookies?.accessToken ||req.headers.authorization?.replace("Bearer","") 
    
@@ -18,11 +20,6 @@ const verifyJWT = asynchandler(async (req, _, next) => {
        if(!user){
            throw new apiError(401, 'invalid token');
        }
-
-       // Check if email is verified
-       if (!user.isEmailVerified) {
-           throw new apiError(403, 'Email is not verified. Please verify your email before accessing this resource.');
-       }
    
        req.user = user;
    
@@ -33,4 +30,4 @@ const verifyJWT = asynchandler(async (req, _, next) => {
  }
 });
 
-module.exports = verifyJWT; // Export the verifyJWT function
+module.exports = verifyJWTOnly;

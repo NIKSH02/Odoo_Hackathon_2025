@@ -5,6 +5,11 @@ const fileUpload = require("express-fileupload");
 const connectDB = require("./src/config/db.js");
 const dotenv = require("dotenv");
 const userRouter = require("./src/routes/user.route");
+const itemRouter = require("./src/routes/item.route");
+const swapRouter = require("./src/routes/swap.route");
+const pointsRouter = require("./src/routes/points.route");
+const adminRouter = require("./src/routes/admin.route");
+const orderRouter = require("./src/routes/order.route");
 
 dotenv.config();
 
@@ -38,7 +43,12 @@ app.use(
 
 
 
-app.use("/user/api", userRouter); 
+app.use("/api/users", userRouter); 
+app.use("/api/items", itemRouter);
+app.use("/api/swaps", swapRouter);
+app.use("/api/points", pointsRouter);
+app.use("/api/admin", adminRouter);
+app.use("/api/orders", orderRouter);
 connectDB();
 
 
